@@ -32,9 +32,11 @@ yarn install
 ```
 Then, run the development server:
 
+```bash
 npm run dev
 # or
 yarn dev
+```
 
 Finally, 
 Go to localhost:3000 on your browser.
