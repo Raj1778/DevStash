@@ -22,7 +22,7 @@ export function FloatingDockDemo() {
       icon: (
         <IconArticle className="h-full w-full text-neutral-500 dark:text-neutral-300" />
       ),
-      href: "/blog",
+      href: "/blogPage",
     },
     {
       title: "Create Blog",
@@ -36,14 +36,14 @@ export function FloatingDockDemo() {
       icon: (
         <IconNotebook className="h-full w-full text-neutral-500 dark:text-neutral-300" />
       ),
-      href: "#",
+      href: "/Notes",
     },
     {
       title: "GitHub",
       icon: (
         <IconBrandGithub className="h-full w-full text-neutral-500 dark:text-neutral-300" />
       ),
-      href: "#",
+      href: "https://github.com/Raj1778",
     },
   ];
 

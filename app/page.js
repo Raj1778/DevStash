@@ -5,6 +5,7 @@ import Action from "@/components/Action";
 import SearchBar from "@/components/SearchBar";
 import Recent from "@/components/Recent";
 import { FloatingDockDemo } from "@/components/dock";
+import RecentBlogs from "@/components/RecentBlogs";
 
 export default function Home() {
   return (
@@ -17,7 +18,8 @@ export default function Home() {
       {/* <div className="flex flex-row w-full p-2 my-2 items-center justify-center">
         <Action />
       </div> */}
-
+      <RecentBlogs />
+      <hr className="border-neutral-800" />
       {/* Spacer to push dock to bottom */}
       <div className="flex-1" />
 

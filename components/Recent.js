@@ -9,7 +9,7 @@ const Recent = () => {
   return (
     <>
       <div className="flex items-center px-6 pt-8 mx-2">
-        <h1 className="text-white text-2xl">Continue Working</h1>
+        <h1 className="text-white text-2xl font-sans">Continue Working</h1>
       </div>
 
       {/* ✅ Wrapper for horizontal scroll */}

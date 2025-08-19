@@ -3,7 +3,7 @@ import { useState } from "react";
 import { CiMenuBurger } from "react-icons/ci";
 import Sidebar from "@/components/Sidebar";
 
-export default function Navbar() {
+export default function Navbar({ home }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const toggleSidebar = () => {

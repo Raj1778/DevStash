@@ -3,7 +3,7 @@ export default function Sidebar() {
     <div
       className="w-64 p-4 flex flex-col justify-between
                     bg-black/50 backdrop-blur-md border border-white/20 rounded-lg
-                    text-white shadow-lg mx-2 md:mx-4"
+                    text-white shadow-lg  md:mx-4"
     >
       {/* Top Section: Navigation */}
       <ul className="space-y-2">
