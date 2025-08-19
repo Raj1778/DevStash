@@ -9,8 +9,8 @@ export default function Navbar() {
   return (
     <div className="relative">
       {/* Navbar */}
-      <div className="bg-blue-500 border-b border-neutral-800 shadow-md p-8 flex items-center justify-between bg-[#0a0a0a]">
-        <h1 className="text-white text-2xl">DevStash</h1>
+      <div className="h-20 bg-zinc-900 shadow-md p-8 flex items-center justify-between bg-[#0a0a0a]">
+        <h1 className="text-white text-2xl font-bold">DevStash</h1>
         <div
           onMouseEnter={() => setSidebar(true)}
           onMouseLeave={() => setSidebar(false)}

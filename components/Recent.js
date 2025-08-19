@@ -27,10 +27,10 @@ const Recent = () => {
 const RecentCard = ({ title }) => {
   return (
     <div
-      className="h-16 w-36 rounded-xl flex items-center justify-center text-white 
-                    bg-gradient-to-r from-[#1CB5E0] to-[#000046]"
+      className="h-16 w-36 min-w-24 rounded-xl flex items-center justify-center text-white 
+                    bg-gradient-to-tr from-[#592E83] to-[#000046]"
     >
-      <h1>{title}</h1>
+      <h1 className="text-center">{title}</h1>
     </div>
   );
 };
