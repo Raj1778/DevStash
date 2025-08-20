@@ -1,11 +1,8 @@
 "use client";
 import Link from "next/link";
-import Navbar from "@/components/Navbar";
-import Action from "@/components/Action";
-import SearchBar from "@/components/SearchBar";
 import Recent from "@/components/Recent";
-import { FloatingDockDemo } from "@/components/dock";
 import RecentBlogs from "@/components/RecentBlogs";
+import { TrendingUpIcon } from "lucide-react";
 
 // Quick Action Cards - Mobile optimized
 const QuickAction = ({ title, description, icon, onClick, href }) => {
@@ -85,7 +82,7 @@ const BookIcon = () => (
   </svg>
 );
 
-const SearchIcon = () => (
+const TrendingIcon = () => (
   <svg
     className="w-6 h-6 md:w-5 md:h-5"
     fill="none"
@@ -96,7 +93,7 @@ const SearchIcon = () => (
       strokeLinecap="round"
       strokeLinejoin="round"
       strokeWidth={2}
-      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+      d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
     />
   </svg>
 );
@@ -147,9 +144,9 @@ export default function Home() {
               href="/projects" // Using Link instead of onClick
             />
             <QuickAction
-              title="Search Content"
-              description="Find specific posts or drafts"
-              icon={<SearchIcon />}
+              title="Trending in Tech"
+              description="Discover popular topics"
+              icon={<TrendingIcon />}
               onClick={() => console.log("Open search")}
             />
           </div>
