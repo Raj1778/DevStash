@@ -1,16 +1,53 @@
+// app/create/page.js
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function CreateBlogPage() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [author, setAuthor] = useState("");
+  const [tags, setTags] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const router = useRouter();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log({ title, content, author });
-    // Later: send data to API (POST request)
+    setIsSubmitting(true);
+    setError("");
+
+    try {
+      const response = await fetch("/api/blogs", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title,
+          content,
+          author,
+          tags: tags
+            .split(",")
+            .map((tag) => tag.trim())
+            .filter((tag) => tag),
+        }),
+      });
+
+      if (response.ok) {
+        const blog = await response.json();
+        router.push(`/blog/${blog.slug}`);
+      } else {
+        const errorData = await response.json();
+        setError(errorData.error || "Failed to create blog");
+      }
+    } catch (error) {
+      setError("An unexpected error occurred");
+      console.error("Error:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -26,8 +63,15 @@ export default function CreateBlogPage() {
           </p>
         </div>
 
+        {/* Error Message */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-900 text-red-100 rounded-md">
+            {error}
+          </div>
+        )}
+
         {/* Form */}
-        <div className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
           {/* Author Name */}
           <div>
             <label className="block text-gray-400 text-sm mb-2">Author</label>
@@ -37,6 +81,7 @@ export default function CreateBlogPage() {
               onChange={(e) => setAuthor(e.target.value)}
               placeholder="Your name"
               className="w-full px-3 py-2 bg-neutral-900 border border-neutral-800 rounded text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
+              required
             />
           </div>
 
@@ -48,6 +93,21 @@ export default function CreateBlogPage() {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Blog title"
+              className="w-full px-3 py-2 bg-neutral-900 border border-neutral-800 rounded text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
+              required
+            />
+          </div>
+
+          {/* Tags */}
+          <div>
+            <label className="block text-gray-400 text-sm mb-2">
+              Tags (comma-separated)
+            </label>
+            <input
+              type="text"
+              value={tags}
+              onChange={(e) => setTags(e.target.value)}
+              placeholder="technology, programming, webdev"
               className="w-full px-3 py-2 bg-neutral-900 border border-neutral-800 rounded text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
             />
           </div>
@@ -61,22 +121,25 @@ export default function CreateBlogPage() {
               onChange={(e) => setContent(e.target.value)}
               placeholder="Write your blog content here..."
               className="w-full px-3 py-2 bg-neutral-900 border border-neutral-800 rounded text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none"
+              required
             />
           </div>
 
           {/* Submit Button */}
           <button
-            onClick={handleSubmit}
-            disabled={!title.trim() || !content.trim() || !author.trim()}
-            className="px-6 py-2 bg-blue-600 text-white rounded 
+            type="submit"
+            disabled={
+              !title.trim() || !content.trim() || !author.trim() || isSubmitting
+            }
+            className="px-6 py-3 bg-blue-600 text-white rounded 
              hover:bg-blue-700 
              transition-transform duration-150 
              active:scale-95 active:translate-y-[2px]
              disabled:bg-neutral-900 disabled:text-gray-600 disabled:cursor-not-allowed"
           >
-            Publish Blog
+            {isSubmitting ? "Publishing..." : "Publish Blog"}
           </button>
-        </div>
+        </form>
       </div>
     </div>
   );

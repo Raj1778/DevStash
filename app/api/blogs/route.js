@@ -1,0 +1,42 @@
+// app/api/blogs/route.js
+import { NextResponse } from "next/server";
+import connectDB from "@/lib/db/mongodb";
+import Blog from "@/lib/models/Blog";
+
+function generateSlug(title) {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9 -]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .trim();
+}
+
+export async function POST(request) {
+  try {
+    await connectDB();
+    console.log("Connected to database for blog creation");
+
+    const { title, content, excerpt, author } = await request.json();
+    console.log("Received data:", { title, content, excerpt, author });
+
+    const slug = generateSlug(title);
+    console.log("Generated slug:", slug);
+
+    const blog = new Blog({
+      title,
+      slug,
+      content,
+      excerpt,
+      author,
+    });
+
+    const savedBlog = await blog.save();
+    console.log("Blog saved successfully:", savedBlog);
+
+    return NextResponse.json(savedBlog, { status: 201 });
+  } catch (error) {
+    console.error("Error creating blog:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
