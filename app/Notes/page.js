@@ -85,6 +85,20 @@ const X = ({ size = 20 }) => (
   </svg>
 );
 
+const LoadingSpinner = ({ size = 20 }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    className="animate-spin"
+  >
+    <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+  </svg>
+);
+
 const Notes = () => {
   const [notes, setNotes] = useState([]);
   const [selectedNote, setSelectedNote] = useState(null);
@@ -93,8 +107,39 @@ const Notes = () => {
   const [currentContent, setCurrentContent] = useState("");
   const [showSidebar, setShowSidebar] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   const saveTimeoutRef = useRef(null);
+  const lastSavedRef = useRef({ title: "", content: "" });
+
+  // Fetch notes from the database
+  const fetchNotes = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch("/api/notes");
+      if (response.ok) {
+        const notesData = await response.json();
+        // Sort notes by updatedAt (most recent first)
+        const sortedNotes = notesData.sort(
+          (a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)
+        );
+        setNotes(sortedNotes);
+
+        // Auto-select first note if none selected and notes exist
+        if (sortedNotes.length > 0 && !selectedNote) {
+          selectNote(sortedNotes[0]);
+        }
+      } else {
+        console.error("Failed to fetch notes:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Error fetching notes:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Handle responsive behavior
   useEffect(() => {
@@ -107,48 +152,93 @@ const Notes = () => {
     checkScreenSize();
     window.addEventListener("resize", checkScreenSize);
 
-    // Initialize with sample data
-    const sampleNotes = [
-      {
-        id: 1,
-        title: "Welcome to DevStash Notes",
-        content:
-          "Welcome to your minimal notes app. Just click anywhere to start writing - your changes will be saved automatically.",
-        starred: false,
-        createdAt: new Date().toISOString(),
-      },
-    ];
-    setNotes(sampleNotes);
-    setSelectedNote(sampleNotes[0]);
-    setCurrentTitle(sampleNotes[0].title);
-    setCurrentContent(sampleNotes[0].content);
+    // Fetch notes from database on component mount
+    fetchNotes();
 
     return () => window.removeEventListener("resize", checkScreenSize);
   }, []);
 
-  // Auto-save with debouncing
+  // Track changes and set unsaved state
   useEffect(() => {
-    if (!selectedNote) return;
+    if (!selectedNote) {
+      setHasUnsavedChanges(false);
+      return;
+    }
 
-    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    const titleChanged = currentTitle !== lastSavedRef.current.title;
+    const contentChanged = currentContent !== lastSavedRef.current.content;
 
-    saveTimeoutRef.current = setTimeout(() => {
-      setNotes((prev) =>
-        prev.map((note) =>
-          note.id === selectedNote.id
-            ? { ...note, title: currentTitle, content: currentContent }
-            : note
-        )
-      );
-      setSelectedNote((prev) => ({
-        ...prev,
-        title: currentTitle,
-        content: currentContent,
-      }));
-    }, 1000);
-
-    return () => clearTimeout(saveTimeoutRef.current);
+    setHasUnsavedChanges(titleChanged || contentChanged);
   }, [currentTitle, currentContent, selectedNote]);
+
+  // Auto-save with proper debouncing (only when typing stops)
+  useEffect(() => {
+    if (!selectedNote || !hasUnsavedChanges) return;
+
+    // Clear existing timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    // Set new timeout - save after user stops typing for 2 seconds
+    saveTimeoutRef.current = setTimeout(async () => {
+      // Check if content actually changed
+      const titleChanged = currentTitle !== lastSavedRef.current.title;
+      const contentChanged = currentContent !== lastSavedRef.current.content;
+
+      if (!titleChanged && !contentChanged) return;
+
+      setSaving(true);
+      try {
+        const response = await fetch(`/api/notes/${selectedNote._id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            title: currentTitle || "Untitled Note",
+            content: currentContent,
+            starred: selectedNote.starred,
+          }),
+        });
+
+        if (response.ok) {
+          const updatedNote = await response.json();
+
+          // Update the notes list
+          setNotes((prev) =>
+            prev
+              .map((note) =>
+                note._id === updatedNote._id ? updatedNote : note
+              )
+              .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
+          );
+
+          setSelectedNote(updatedNote);
+
+          // Update last saved reference
+          lastSavedRef.current = {
+            title: currentTitle,
+            content: currentContent,
+          };
+
+          setHasUnsavedChanges(false);
+        } else {
+          console.error("Failed to save note:", response.statusText);
+        }
+      } catch (error) {
+        console.error("Error saving note:", error);
+      } finally {
+        setSaving(false);
+      }
+    }, 2000); // Save after 2 seconds of no typing
+
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, [currentTitle, currentContent, selectedNote, hasUnsavedChanges]);
 
   const filteredNotes = notes.filter(
     (note) =>
@@ -156,47 +246,125 @@ const Notes = () => {
       note.content.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const createNewNote = () => {
-    const newNote = {
-      id: Date.now(),
-      title: "Untitled Note",
-      content: "",
-      starred: false,
-      createdAt: new Date().toISOString(),
-    };
-    setNotes([newNote, ...notes]);
-    selectNote(newNote);
-    if (isMobile) setShowSidebar(false);
+  const createNewNote = async () => {
+    try {
+      const response = await fetch("/api/notes", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: "Untitled Note",
+          content: "",
+          starred: false,
+        }),
+      });
+
+      if (response.ok) {
+        const newNote = await response.json();
+        setNotes([newNote, ...notes]);
+        selectNote(newNote);
+        if (isMobile) setShowSidebar(false);
+      } else {
+        console.error("Failed to create note:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Error creating note:", error);
+    }
   };
 
   const selectNote = (note) => {
     setSelectedNote(note);
     setCurrentTitle(note.title);
     setCurrentContent(note.content);
+
+    // Update last saved reference
+    lastSavedRef.current = {
+      title: note.title,
+      content: note.content,
+    };
+
+    setHasUnsavedChanges(false);
     if (isMobile) setShowSidebar(false);
   };
 
-  const deleteNote = (noteId) => {
-    const updatedNotes = notes.filter((note) => note.id !== noteId);
-    setNotes(updatedNotes);
-    if (selectedNote?.id === noteId) {
-      const nextNote = updatedNotes[0] || null;
-      setSelectedNote(nextNote);
-      setCurrentTitle(nextNote?.title || "");
-      setCurrentContent(nextNote?.content || "");
+  const deleteNote = async (noteId) => {
+    if (!confirm("Are you sure you want to delete this note?")) return;
+
+    try {
+      const response = await fetch(`/api/notes/${noteId}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        const updatedNotes = notes.filter((note) => note._id !== noteId);
+        setNotes(updatedNotes);
+
+        if (selectedNote?._id === noteId) {
+          const nextNote = updatedNotes[0] || null;
+          if (nextNote) {
+            selectNote(nextNote);
+          } else {
+            setSelectedNote(null);
+            setCurrentTitle("");
+            setCurrentContent("");
+            lastSavedRef.current = { title: "", content: "" };
+            setHasUnsavedChanges(false);
+          }
+        }
+      } else {
+        console.error("Failed to delete note:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Error deleting note:", error);
     }
   };
 
-  const toggleStar = (noteId) => {
-    setNotes((prev) =>
-      prev.map((note) =>
-        note.id === noteId ? { ...note, starred: !note.starred } : note
-      )
-    );
-    if (selectedNote?.id === noteId) {
-      setSelectedNote((prev) => ({ ...prev, starred: !selectedNote.starred }));
+  const toggleStar = async (noteId) => {
+    try {
+      const noteToUpdate = notes.find((note) => note._id === noteId);
+      if (!noteToUpdate) return;
+
+      const response = await fetch(`/api/notes/${noteId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: noteToUpdate.title,
+          content: noteToUpdate.content,
+          starred: !noteToUpdate.starred,
+        }),
+      });
+
+      if (response.ok) {
+        const updatedNote = await response.json();
+        setNotes((prev) =>
+          prev.map((note) =>
+            note._id === updatedNote._id ? updatedNote : note
+          )
+        );
+        if (selectedNote?._id === noteId) {
+          setSelectedNote(updatedNote);
+        }
+      } else {
+        console.error("Failed to toggle star:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Error toggling star:", error);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <LoadingSpinner size={32} className="mx-auto mb-4" />
+          <p className="text-zinc-400">Loading your notes...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-black text-white flex relative">
@@ -222,6 +390,7 @@ const Notes = () => {
               <button
                 onClick={createNewNote}
                 className="p-2 hover:bg-zinc-800 rounded transition-colors"
+                title="Create new note"
               >
                 <Plus size={18} />
               </button>
@@ -237,7 +406,7 @@ const Notes = () => {
           </div>
           <input
             type="text"
-            placeholder="🔍 Search..."
+            placeholder="🔍 Search notes..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-zinc-600"
@@ -246,64 +415,93 @@ const Notes = () => {
 
         {/* Notes List */}
         <div className="flex-1 overflow-y-auto">
-          {filteredNotes.map((note) => (
-            <div
-              key={note.id}
-              onClick={() => selectNote(note)}
-              className={`group p-4 border-b border-zinc-800 cursor-pointer hover:bg-zinc-800 transition-colors ${
-                selectedNote?.id === note.id
-                  ? "bg-zinc-800 border-l-2 border-l-white"
-                  : ""
-              }`}
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center space-x-2 mb-1">
-                    <h3 className="font-medium truncate">{note.title}</h3>
-                    {note.starred && (
+          {filteredNotes.length === 0 ? (
+            <div className="p-4 text-center text-zinc-500">
+              <FileText size={32} className="mx-auto mb-2 opacity-50" />
+              <p className="text-sm">
+                {searchTerm ? "No notes found" : "No notes yet"}
+              </p>
+            </div>
+          ) : (
+            filteredNotes.map((note) => (
+              <div
+                key={note._id}
+                onClick={() => selectNote(note)}
+                className={`group p-4 border-b border-zinc-800 cursor-pointer hover:bg-zinc-800 transition-colors ${
+                  selectedNote?._id === note._id
+                    ? "bg-zinc-800 border-l-2 border-l-white"
+                    : ""
+                }`}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center space-x-2 mb-1">
+                      <h3 className="font-medium truncate text-sm">
+                        {note.title || "Untitled Note"}
+                      </h3>
+                      {note.starred && (
+                        <Star
+                          size={12}
+                          filled
+                          className="text-yellow-500 flex-shrink-0"
+                        />
+                      )}
+                    </div>
+                    <p className="text-xs text-zinc-400 line-clamp-2">
+                      {note.content ? (
+                        <>
+                          {note.content.substring(0, 80)}
+                          {note.content.length > 80 && "..."}
+                        </>
+                      ) : (
+                        "No additional text"
+                      )}
+                    </p>
+                    <p className="text-xs text-zinc-500 mt-1">
+                      {new Date(note.updatedAt).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </p>
+                  </div>
+                  <div className="flex items-center space-x-1 ml-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleStar(note._id);
+                      }}
+                      className="p-1 hover:bg-zinc-700 rounded"
+                      title={
+                        note.starred
+                          ? "Remove from favorites"
+                          : "Add to favorites"
+                      }
+                    >
                       <Star
                         size={14}
-                        filled
-                        className="text-yellow-500 flex-shrink-0"
+                        filled={note.starred}
+                        className={
+                          note.starred ? "text-yellow-500" : "text-zinc-500"
+                        }
                       />
-                    )}
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteNote(note._id);
+                      }}
+                      className="p-1 hover:bg-zinc-700 rounded text-zinc-500 hover:text-red-400"
+                      title="Delete note"
+                    >
+                      <Trash size={14} />
+                    </button>
                   </div>
-                  <p className="text-sm text-zinc-400 line-clamp-2">
-                    {note.content.substring(0, 100)}...
-                  </p>
-                  <p className="text-xs text-zinc-500 mt-1">
-                    {new Date(note.createdAt).toLocaleDateString()}
-                  </p>
-                </div>
-                <div className="flex items-center space-x-1 ml-2">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleStar(note.id);
-                    }}
-                    className="p-1 hover:bg-zinc-700 rounded opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <Star
-                      size={14}
-                      filled={note.starred}
-                      className={
-                        note.starred ? "text-yellow-500" : "text-zinc-500"
-                      }
-                    />
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      deleteNote(note.id);
-                    }}
-                    className="p-1 hover:bg-zinc-700 rounded text-zinc-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <Trash size={14} />
-                  </button>
                 </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
 
@@ -323,18 +521,37 @@ const Notes = () => {
             </h1>
           </div>
 
-          {selectedNote && (
-            <button
-              onClick={() => toggleStar(selectedNote.id)}
-              className={`p-2 rounded transition-colors ${
-                selectedNote.starred
-                  ? "text-yellow-500"
-                  : "text-zinc-500 hover:text-white"
-              }`}
-            >
-              <Star size={20} filled={selectedNote.starred} />
-            </button>
-          )}
+          <div className="flex items-center space-x-4">
+            {hasUnsavedChanges && !saving && (
+              <div className="flex items-center text-amber-400 text-sm">
+                <div className="w-2 h-2 bg-amber-400 rounded-full mr-2"></div>
+                Unsaved changes
+              </div>
+            )}
+            {saving && (
+              <div className="flex items-center text-blue-400 text-sm">
+                <LoadingSpinner size={16} className="mr-2" />
+                Saving...
+              </div>
+            )}
+            {selectedNote && (
+              <button
+                onClick={() => toggleStar(selectedNote._id)}
+                className={`p-2 rounded transition-colors ${
+                  selectedNote.starred
+                    ? "text-yellow-500"
+                    : "text-zinc-500 hover:text-white"
+                }`}
+                title={
+                  selectedNote.starred
+                    ? "Remove from favorites"
+                    : "Add to favorites"
+                }
+              >
+                <Star size={20} filled={selectedNote.starred} />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Editor Area */}
@@ -357,19 +574,29 @@ const Notes = () => {
                 <textarea
                   value={currentContent}
                   onChange={(e) => setCurrentContent(e.target.value)}
-                  className="w-full h-full bg-transparent border-none outline-none text-white placeholder-zinc-500 resize-none text-base leading-relaxed p-2 md:p-4"
-                  placeholder="Start writing..."
+                  className="w-full h-full bg-transparent border-none outline-none text-white placeholder-zinc-500 resize-none text-base leading-relaxed"
+                  placeholder="Start writing your note..."
+                  style={{ minHeight: "400px" }}
                 />
               </div>
             </div>
           ) : (
             <div className="flex-1 flex items-center justify-center text-zinc-500 p-4">
-              <div className="text-center">
+              <div className="text-center max-w-md">
                 <FileText size={48} className="mx-auto mb-4 opacity-50" />
                 <p className="text-lg mb-2">No note selected</p>
-                <p className="text-sm text-center">
-                  Choose a note from the sidebar or create a new one
+                <p className="text-sm text-center mb-4">
+                  {notes.length === 0
+                    ? "Create your first note to get started"
+                    : "Choose a note from the sidebar or create a new one"}
                 </p>
+                <button
+                  onClick={createNewNote}
+                  className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-md transition-colors inline-flex items-center space-x-2"
+                >
+                  <Plus size={16} />
+                  <span>Create Note</span>
+                </button>
               </div>
             </div>
           )}
