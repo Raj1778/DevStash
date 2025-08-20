@@ -14,7 +14,7 @@ export function FloatingDockDemo() {
   const pathname = usePathname();
 
   // pages where dock should NOT be shown
-  const excludedPaths = ["/Notes", "/about-developers"];
+  const excludedPaths = ["/Notes", "/about-developers", "/login", "/register"];
 
   if (excludedPaths.includes(pathname)) {
     return null;

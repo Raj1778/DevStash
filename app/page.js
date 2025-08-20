@@ -1,5 +1,5 @@
 "use client";
-import Image from "next/image";
+import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Action from "@/components/Action";
 import SearchBar from "@/components/SearchBar";
@@ -8,28 +8,38 @@ import { FloatingDockDemo } from "@/components/dock";
 import RecentBlogs from "@/components/RecentBlogs";
 
 // Quick Action Cards - Mobile optimized
-const QuickAction = ({ title, description, icon, onClick }) => (
-  <div
-    onClick={onClick}
-    className="group bg-gradient-to-br from-zinc-900/60 to-zinc-800/40 border border-zinc-800/50 rounded-2xl p-4 md:p-4 hover:from-zinc-800/60 hover:to-zinc-700/40 hover:border-zinc-700/60 transition-all duration-300 cursor-pointer active:scale-95 shadow-lg backdrop-blur-sm"
-  >
-    <div className="flex items-center space-x-4 md:space-x-3">
-      <div className="text-zinc-400 group-hover:text-white transition-colors p-2 md:p-0 bg-zinc-800/50 md:bg-transparent rounded-xl md:rounded-none">
-        {icon}
-      </div>
-      <div className="flex-1">
-        <h3 className="text-white font-medium text-base md:text-sm">{title}</h3>
-        <p className="text-zinc-400 text-sm md:text-sm leading-relaxed">
-          {description}
-        </p>
+const QuickAction = ({ title, description, icon, onClick, href }) => {
+  // If href is provided, use Link wrapper
+  const content = (
+    <div className="group bg-gradient-to-br from-zinc-900/60 to-zinc-800/40 border border-zinc-800/50 rounded-2xl p-4 md:p-4 hover:from-zinc-800/60 hover:to-zinc-700/40 hover:border-zinc-700/60 transition-all duration-300 cursor-pointer active:scale-95 shadow-lg backdrop-blur-sm">
+      <div className="flex items-center space-x-4 md:space-x-3">
+        <div className="text-zinc-400 group-hover:text-white transition-colors p-2 md:p-0 bg-zinc-808/50 md:bg-transparent rounded-xl md:rounded-none">
+          {icon}
+        </div>
+        <div className="flex-1">
+          <h3 className="text-white font-medium text-base md:text-sm">
+            {title}
+          </h3>
+          <p className="text-zinc-400 text-sm md:text-sm leading-relaxed">
+            {description}
+          </p>
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+
+  return href ? (
+    <Link href={href} passHref>
+      {content}
+    </Link>
+  ) : (
+    <div onClick={onClick}>{content}</div>
+  );
+};
 
 // Stats Card - Enhanced for mobile
 const StatCard = ({ label, value, trend }) => (
-  <div className="bg-gradient-to-br from-zinc-900/50 to-zinc-800/30 border border-zinc-800/60 rounded-2xl p-4 md:p-4 backdrop-blur-sm shadow-lg">
+  <div className="bg-gradient-to-br from-zinc-900/50 to-zinc-808/30 border border-zinc-808/60 rounded-2xl p-4 md:p-4 backdrop-blur-sm shadow-lg">
     <div className="text-zinc-400 text-xs md:text-sm font-medium mb-2">
       {label}
     </div>
@@ -70,7 +80,7 @@ const BookIcon = () => (
       strokeLinecap="round"
       strokeLinejoin="round"
       strokeWidth={2}
-      d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+      d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477 4.5 1.253"
     />
   </svg>
 );
@@ -95,7 +105,7 @@ export default function Home() {
   return (
     <div className="bg-[#0a0a0a] min-h-screen min-w-[320px] flex flex-col relative">
       {/* Ambient Background Effects */}
-      <div className="fixed inset-0 bg-gradient-to-br from-zinc-900/20 via-transparent to-zinc-800/20 pointer-events-none" />
+      <div className="fixed inset-0 bg-gradient-to-br from-zinc-909/20 via-transparent to-zinc-808/20 pointer-events-none" />
       <div className="fixed top-0 left-1/2 -translate-x-1/2 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
 
       {/* Main Content */}
@@ -134,7 +144,7 @@ export default function Home() {
               title="My Projects"
               description="Explore your repositories"
               icon={<BookIcon />}
-              onClick={() => console.log("Navigate to projects")}
+              href="/projects" // Using Link instead of onClick
             />
             <QuickAction
               title="Search Content"
@@ -151,7 +161,7 @@ export default function Home() {
             <h2 className="text-xl md:text-xl font-light text-white">
               Recent Activity
             </h2>
-            <button className="text-zinc-400 hover:text-white text-sm md:text-sm transition-colors px-3 py-2 md:px-0 md:py-0 rounded-lg md:rounded-none hover:bg-zinc-800/50 md:hover:bg-transparent">
+            <button className="text-zinc-400 hover:text-white text-sm md:text-sm transition-colors px-3 py-2 md:px-0 md:py-0 rounded-lg md:rounded-none hover:bg-zinc-808/50 md:hover:bg-transparent">
               View all
             </button>
           </div>
@@ -164,7 +174,7 @@ export default function Home() {
             <h2 className="text-xl md:text-xl font-light text-white">
               Latest Posts
             </h2>
-            <button className="text-zinc-400 hover:text-white text-sm md:text-sm transition-colors px-3 py-2 md:px-0 md:py-0 rounded-lg md:rounded-none hover:bg-zinc-800/50 md:hover:bg-transparent">
+            <button className="text-zinc-400 hover:text-white text-sm md:text-sm transition-colors px-3 py-2 md:px-0 md:py-0 rounded-lg md:rounded-none hover:bg-zinc-808/50 md:hover:bg-transparent">
               View all blogs
             </button>
           </div>

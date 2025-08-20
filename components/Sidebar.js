@@ -9,28 +9,28 @@ export default function Sidebar() {
       {/* Top Section: Navigation */}
       <ul className="space-y-2">
         <li>
-          <a
-            href="#"
+          <Link
+            href="/"
             className="block py-2 px-4 rounded hover:bg-white/10 transition"
           >
             Dashboard
-          </a>
+          </Link>
         </li>
         <li>
-          <a
-            href="#"
+          <Link
+            href="/projects"
             className="block py-2 px-4 rounded hover:bg-white/10 transition"
           >
             Projects
-          </a>
+          </Link>
         </li>
         <li>
-          <a
-            href="#"
+          <Link
+            href="/my-account"
             className="block py-2 px-4 rounded hover:bg-white/10 transition"
           >
             My Account
-          </a>
+          </Link>
         </li>
         <li>
           <a
@@ -43,20 +43,12 @@ export default function Sidebar() {
           </a>
         </li>
         <li>
-          <a
-            href="#"
-            className="block py-2 px-4 rounded hover:bg-white/10 transition"
-          >
-            Settings
-          </a>
-        </li>
-        <li>
-          <a
-            href="#"
+          <Link
+            href="/login"
             className="block py-2 px-4 rounded hover:bg-white/10 transition"
           >
             Logout
-          </a>
+          </Link>
         </li>
         <li>
           <Link
