@@ -1,7 +1,9 @@
 // app/blogs/page.js
-import connectDB from "@/lib/db/mongodb";
-import Blog from "@/lib/models/Blog";
+import { getAllBlogs } from "@/lib/db/blog";
 import Link from "next/link";
+
+// Force dynamic rendering to ensure SSR
+export const dynamic = "force-dynamic";
 
 const BlogCard = ({ title, author, date, image, excerpt, slug, tags }) => (
   <article className="group mb-8">
@@ -112,12 +114,8 @@ const BlogCard = ({ title, author, date, image, excerpt, slug, tags }) => (
 
 // Main page component
 export default async function BlogsPage() {
-  // Connect to database and fetch blogs
-  await connectDB();
-  const blogs = await Blog.find({})
-    .sort({ createdAt: -1 }) // Newest first
-    .select("title author createdAt image excerpt slug tags") // Only get needed fields
-    .lean(); // Convert to plain JavaScript objects
+  // Use the centralized data fetching function
+  const blogs = await getAllBlogs();
 
   return (
     <div className="min-h-screen bg-black">
@@ -178,7 +176,7 @@ export default async function BlogsPage() {
           </div>
         ) : (
           <div className="space-y-6">
-            {blogs.map((blog, index) => (
+            {blogs.map((blog) => (
               <div key={blog._id}>
                 <BlogCard
                   title={blog.title}
