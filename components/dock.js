@@ -11,11 +11,11 @@ import {
 export function FloatingDockDemo() {
   const links = [
     {
-      title: "Home",
+      title: "Dashboard",
       icon: (
         <IconHome className="h-full w-full text-neutral-500 dark:text-neutral-300" />
       ),
-      href: "#",
+      href: "/",
     },
     {
       title: "Blogs",
@@ -29,7 +29,7 @@ export function FloatingDockDemo() {
       icon: (
         <IconEdit className="h-full w-full text-neutral-500 dark:text-neutral-300" />
       ),
-      href: "#",
+      href: "/createBlog",
     },
     {
       title: "Notes",
@@ -48,7 +48,7 @@ export function FloatingDockDemo() {
   ];
 
   return (
-    <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50">
+    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50">
       <FloatingDock
         // remove this in prod
         mobileClassName="translate-y-20"

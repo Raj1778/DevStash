@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { CiMenuBurger } from "react-icons/ci";
+import { Menu } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
 
 export default function Navbar({ home }) {
@@ -15,13 +15,8 @@ export default function Navbar({ home }) {
       {/* Navbar */}
       <div className="h-20 bg-zinc-900 shadow-md p-8 flex items-center justify-between bg-[#0a0a0a]">
         <h1 className="text-white text-2xl font-bold">DevStash</h1>
-        <div className="relative">
-          <button
-            className="text-white text-xl p-2 rounded-xl border-1 border-white hover:bg-white hover:text-black transition-all duration-200"
-            onClick={toggleSidebar}
-          >
-            <CiMenuBurger />
-          </button>
+        <div className="flex items-center space-x-4 h-10 w-10 onClick={toggleSidebar} ">
+          <Menu className="text-white text-2xl" />
         </div>
       </div>
 
