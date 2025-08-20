@@ -1,7 +1,6 @@
 import React from "react";
 
 const RecentBlogs = () => {
-  // Example data
   const recentBlogs = [
     { title: "Understanding React Hooks", author: "Raj" },
     { title: "Tailwind CSS Tips", author: "Alice" },
@@ -10,16 +9,10 @@ const RecentBlogs = () => {
   ];
 
   return (
-    <div>
-      <div className="flex items-center px-6 pt-8 mx-2">
-        <h1 className="text-white text-2xl font-sans">Recent Blog Posts</h1>
-      </div>
-
-      <div className="flex overflow-x-auto gap-8 md:gap-12 p-2 mx-12 md:mx-24 my-4 scrollbar-hide md:flex-wrap">
-        {recentBlogs.map((blog, index) => (
-          <TrendingCard key={index} title={blog.title} author={blog.author} />
-        ))}
-      </div>
+    <div className="flex overflow-x-auto gap-4 pb-2 scrollbar-hide md:grid md:grid-cols-2 lg:grid-cols-4">
+      {recentBlogs.map((blog, index) => (
+        <TrendingCard key={index} title={blog.title} author={blog.author} />
+      ))}
     </div>
   );
 };
@@ -27,11 +20,16 @@ const RecentBlogs = () => {
 const TrendingCard = ({ title, author }) => {
   return (
     <div
-      className="h-24 w-48 min-w-[12rem] rounded-xl flex flex-col justify-center 
-                 text-white bg-white/10 backdrop-blur-lg border border-white/20 shadow-lg cursor-pointer"
+      className="min-w-[180px] md:min-w-0 h-24 rounded-xl flex flex-col justify-center p-3
+                    bg-gradient-to-br from-zinc-800/60 to-zinc-700/40 backdrop-blur-sm 
+                    border border-zinc-700/50 shadow-lg cursor-pointer
+                    hover:from-zinc-700/60 hover:to-zinc-600/40 hover:scale-105 
+                    transition-all duration-200 active:scale-95"
     >
-      <h2 className="text-sm text-center md:text-base m-2">{title}</h2>
-      <p className="text-xs text-gray-200 text-center">{author}</p>
+      <h2 className="text-white font-medium text-sm mb-2 leading-tight line-clamp-2">
+        {title}
+      </h2>
+      <p className="text-zinc-300 text-xs">by {author}</p>
     </div>
   );
 };

@@ -1,9 +1,10 @@
+import Link from "next/link";
 export default function Sidebar() {
   return (
     <div
       className="w-64 p-4 flex flex-col justify-between
-                    bg-black/50 backdrop-blur-md border border-white/20 rounded-lg
-                    text-white shadow-lg  md:mx-4"
+                 bg-black/30 backdrop-blur-xl border border-white/10 
+                 rounded-2xl text-white shadow-2xl md:mx-4 opacity-90"
     >
       {/* Top Section: Navigation */}
       <ul className="space-y-2">
@@ -58,12 +59,12 @@ export default function Sidebar() {
           </a>
         </li>
         <li>
-          <a
-            href="#"
-            className="block py-2 px-4 rounded bg-blue-700 transition"
+          <Link
+            href="/about-developers"
+            className="block py-2 px-4 rounded bg-blue-700 hover:bg-blue-800 transition"
           >
             About Developer
-          </a>
+          </Link>
         </li>
       </ul>
     </div>

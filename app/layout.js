@@ -1,7 +1,7 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { FloatingDockDemo } from "@/components/dock";
-
+import Navbar from "@/components/Navbar";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -23,9 +23,9 @@ export default function RootLayout({ children }) {
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#0a0a0a]`}
       >
+        <Navbar />
         {/* Page Content */}
         <div className="min-h-screen flex flex-col">{children}</div>
-
         {/* Floating Dock (always visible, fixed at bottom) */}
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50">
           <FloatingDockDemo />

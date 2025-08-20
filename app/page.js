@@ -98,9 +98,6 @@ export default function Home() {
       <div className="fixed inset-0 bg-gradient-to-br from-zinc-900/20 via-transparent to-zinc-800/20 pointer-events-none" />
       <div className="fixed top-0 left-1/2 -translate-x-1/2 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
 
-      {/* Navigation */}
-      <Navbar />
-
       {/* Main Content */}
       <div className="flex-1 px-4 md:px-6 py-6 md:py-8 max-w-6xl mx-auto w-full relative z-10">
         {/* Welcome Section - Mobile optimized */}

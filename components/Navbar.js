@@ -15,7 +15,10 @@ export default function Navbar({ home }) {
       {/* Navbar */}
       <div className="h-20 bg-zinc-900 shadow-md p-8 flex items-center justify-between bg-[#0a0a0a]">
         <h1 className="text-white text-2xl font-bold">DevStash</h1>
-        <div className="flex items-center space-x-4 h-10 w-10 onClick={toggleSidebar} ">
+        <div
+          className="flex items-center justify-center h-10 w-10 cursor-pointer "
+          onClick={toggleSidebar}
+        >
           <Menu className="text-white text-2xl" />
         </div>
       </div>

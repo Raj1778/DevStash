@@ -8,10 +8,6 @@ const Recent = () => {
 
   return (
     <>
-      <div className="flex items-center px-6 pt-8 mx-2">
-        <h1 className="text-white text-2xl font-sans">Continue Working</h1>
-      </div>
-
       {/* ✅ Wrapper for horizontal scroll */}
       <div className="flex overflow-x-auto gap-8 md:gap-12 p-2 mx-12 md:mx-24 my-4 scrollbar-hide md:flex-wrap">
         {RecentWork.map((item, index) => (

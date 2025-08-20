@@ -1,5 +1,7 @@
+"use client";
 import React from "react";
-import { FloatingDock } from "@/components/ui/dockui";
+import { FloatingDock as DockUI } from "@/components/ui/dockui";
+import { usePathname } from "next/navigation";
 import {
   IconBrandGithub,
   IconArticle,
@@ -9,6 +11,15 @@ import {
 } from "@tabler/icons-react";
 
 export function FloatingDockDemo() {
+  const pathname = usePathname();
+
+  // pages where dock should NOT be shown
+  const excludedPaths = ["/Notes", "/about-developers"];
+
+  if (excludedPaths.includes(pathname)) {
+    return null;
+  }
+
   const links = [
     {
       title: "Dashboard",
@@ -49,7 +60,7 @@ export function FloatingDockDemo() {
 
   return (
     <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50">
-      <FloatingDock
+      <DockUI
         // remove this in prod
         mobileClassName="translate-y-20"
         items={links}
