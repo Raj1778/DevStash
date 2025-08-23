@@ -17,8 +17,8 @@ export async function POST(request) {
     await connectDB();
     console.log("Connected to database for blog creation");
 
-    const { title, content, excerpt, author } = await request.json();
-    console.log("Received data:", { title, content, excerpt, author });
+    const { title, content, excerpt, author, tags } = await request.json();
+    console.log("Received data:", { title, content, excerpt, author, tags });
 
     const slug = generateSlug(title);
     console.log("Generated slug:", slug);
@@ -29,6 +29,7 @@ export async function POST(request) {
       content,
       excerpt,
       author,
+      tags: tags || [], // Ensure tags is always an array
     });
 
     const savedBlog = await blog.save();

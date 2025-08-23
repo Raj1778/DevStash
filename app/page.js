@@ -2,7 +2,8 @@
 import Link from "next/link";
 import Recent from "@/components/Recent";
 import RecentBlogs from "@/components/RecentBlogs";
-import { TrendingUpIcon } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 // Quick Action Cards - Mobile optimized
 const QuickAction = ({ title, description, icon, onClick, href }) => {
@@ -99,6 +100,29 @@ const TrendingIcon = () => (
 );
 
 export default function Home() {
+  const [user, setUser] = useState(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    fetch("/api/me")
+      .then((res) => {
+        if (res.ok) {
+          return res.json();
+        } else {
+          // Don't redirect, just don't set user
+          return null;
+        }
+      })
+      .then((data) => {
+        if (data && data.user) {
+          setUser(data.user);
+        }
+      })
+      .catch((error) => {
+        console.log("User not logged in, showing public view");
+      });
+  }, []);
+
   return (
     <div className="bg-[#0a0a0a] min-h-screen min-w-[320px] flex flex-col relative">
       {/* Ambient Background Effects */}
@@ -110,10 +134,15 @@ export default function Home() {
         {/* Welcome Section - Mobile optimized */}
         <div className="mb-8 md:mb-8">
           <h1 className="text-3xl md:text-4xl font-light text-white mb-3 md:mb-2 leading-tight">
-            Welcome back
+            {user
+              ? `Welcome back, ${user.name || user.username}!`
+              : "Welcome to DevStash"}
           </h1>
           <p className="text-zinc-400 text-base md:text-base leading-relaxed">
-            Here's what's happening with your content today
+            {user 
+              ? "Here's what's happening with your content today"
+              : "A developer's portfolio and productivity hub"
+            }
           </p>
         </div>
 

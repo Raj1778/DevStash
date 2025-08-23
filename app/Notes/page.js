@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 // SVG Icons
 const Plus = ({ size = 20 }) => (
@@ -110,9 +111,22 @@ const Notes = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const saveTimeoutRef = useRef(null);
   const lastSavedRef = useRef({ title: "", content: "" });
+
+  const router = useRouter();
+
+  // Check authentication status
+  const checkAuth = async () => {
+    try {
+      const response = await fetch("/api/me");
+      setIsAuthenticated(response.ok);
+    } catch (error) {
+      setIsAuthenticated(false);
+    }
+  };
 
   // Fetch notes from the database
   const fetchNotes = async () => {
@@ -131,11 +145,29 @@ const Notes = () => {
         if (sortedNotes.length > 0 && !selectedNote) {
           selectNote(sortedNotes[0]);
         }
+      } else if (response.status === 401) {
+        // Unauthorized - load from localStorage instead
+        console.log("User not logged in, loading from localStorage");
+        const localNotes = JSON.parse(
+          localStorage.getItem("devstash_notes") || "[]"
+        );
+        setNotes(localNotes);
+        if (localNotes.length > 0 && !selectedNote) {
+          selectNote(localNotes[0]);
+        }
       } else {
         console.error("Failed to fetch notes:", response.statusText);
       }
     } catch (error) {
       console.error("Error fetching notes:", error);
+      // Fallback to localStorage
+      const localNotes = JSON.parse(
+        localStorage.getItem("devstash_notes") || "[]"
+      );
+      setNotes(localNotes);
+      if (localNotes.length > 0 && !selectedNote) {
+        selectNote(localNotes[0]);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -152,7 +184,8 @@ const Notes = () => {
     checkScreenSize();
     window.addEventListener("resize", checkScreenSize);
 
-    // Fetch notes from database on component mount
+    // Check auth and fetch notes on component mount
+    checkAuth();
     fetchNotes();
 
     return () => window.removeEventListener("resize", checkScreenSize);
@@ -223,6 +256,30 @@ const Notes = () => {
           };
 
           setHasUnsavedChanges(false);
+        } else if (response.status === 401) {
+          // Unauthorized - save to localStorage instead
+          console.log("User not logged in, saving to localStorage");
+          const updatedNote = {
+            ...selectedNote,
+            title: currentTitle || "Untitled Note",
+            content: currentContent,
+            updatedAt: new Date().toISOString(),
+          };
+
+          // Update notes in state and localStorage
+          const updatedNotes = notes.map((note) =>
+            note._id === selectedNote._id ? updatedNote : note
+          );
+          setNotes(updatedNotes);
+          setSelectedNote(updatedNote);
+          localStorage.setItem("devstash_notes", JSON.stringify(updatedNotes));
+
+          // Update last saved reference
+          lastSavedRef.current = {
+            title: currentTitle,
+            content: currentContent,
+          };
+          setHasUnsavedChanges(false);
         } else {
           console.error("Failed to save note:", response.statusText);
         }
@@ -264,6 +321,23 @@ const Notes = () => {
         const newNote = await response.json();
         setNotes([newNote, ...notes]);
         selectNote(newNote);
+        if (isMobile) setShowSidebar(false);
+      } else if (response.status === 401) {
+        // Unauthorized - create in localStorage instead
+        console.log("User not logged in, creating note in localStorage");
+        const newNote = {
+          _id: Date.now().toString(), // Generate temporary ID
+          title: "Untitled Note",
+          content: "",
+          starred: false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+
+        const updatedNotes = [newNote, ...notes];
+        setNotes(updatedNotes);
+        selectNote(newNote);
+        localStorage.setItem("devstash_notes", JSON.stringify(updatedNotes));
         if (isMobile) setShowSidebar(false);
       } else {
         console.error("Failed to create note:", response.statusText);
@@ -312,6 +386,25 @@ const Notes = () => {
             setHasUnsavedChanges(false);
           }
         }
+      } else if (response.status === 401) {
+        // Unauthorized - delete from localStorage instead
+        console.log("User not logged in, deleting from localStorage");
+        const updatedNotes = notes.filter((note) => note._id !== noteId);
+        setNotes(updatedNotes);
+        localStorage.setItem("devstash_notes", JSON.stringify(updatedNotes));
+
+        if (selectedNote?._id === noteId) {
+          const nextNote = updatedNotes[0] || null;
+          if (nextNote) {
+            selectNote(nextNote);
+          } else {
+            setSelectedNote(null);
+            setCurrentTitle("");
+            setCurrentContent("");
+            lastSavedRef.current = { title: "", content: "" };
+            setHasUnsavedChanges(false);
+          }
+        }
       } else {
         console.error("Failed to delete note:", response.statusText);
       }
@@ -347,6 +440,24 @@ const Notes = () => {
         if (selectedNote?._id === noteId) {
           setSelectedNote(updatedNote);
         }
+      } else if (response.status === 401) {
+        // Unauthorized - toggle star in localStorage instead
+        console.log("User not logged in, toggling star in localStorage");
+        const updatedNote = {
+          ...noteToUpdate,
+          starred: !noteToUpdate.starred,
+          updatedAt: new Date().toISOString(),
+        };
+
+        const updatedNotes = notes.map((note) =>
+          note._id === updatedNote._id ? updatedNote : note
+        );
+        setNotes(updatedNotes);
+        localStorage.setItem("devstash_notes", JSON.stringify(updatedNotes));
+
+        if (selectedNote?._id === noteId) {
+          setSelectedNote(updatedNote);
+        }
       } else {
         console.error("Failed to toggle star:", response.statusText);
       }
@@ -368,6 +479,14 @@ const Notes = () => {
 
   return (
     <div className="min-h-screen bg-black text-white flex relative">
+      {/* Info Banner for non-logged in users */}
+      {!isAuthenticated && notes.length === 0 && (
+        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 bg-blue-900/90 border border-blue-700 rounded-lg px-4 py-2 text-sm text-blue-200 backdrop-blur-sm">
+          💡 Notes are saved locally in your browser. Login to sync across
+          devices!
+        </div>
+      )}
+
       {/* Mobile Backdrop */}
       {isMobile && showSidebar && (
         <div

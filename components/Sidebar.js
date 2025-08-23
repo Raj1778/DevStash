@@ -1,12 +1,21 @@
+"use client";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
+
 export default function Sidebar() {
+  const router = useRouter();
+
+  async function handleLogout() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.push("/login");
+  }
+
   return (
     <div
       className="w-64 p-4 flex flex-col justify-between
                  bg-black/30 backdrop-blur-xl border border-white/10 
                  rounded-2xl text-white shadow-2xl md:mx-4 opacity-90"
     >
-      {/* Top Section: Navigation */}
       <ul className="space-y-2">
         <li>
           <Link
@@ -42,14 +51,17 @@ export default function Sidebar() {
             LinkedIn
           </a>
         </li>
+
+        {/* ✅ Proper Logout Button */}
         <li>
-          <Link
-            href="/login"
-            className="block py-2 px-4 rounded hover:bg-white/10 transition"
+          <button
+            onClick={handleLogout}
+            className="w-full text-left py-2 px-4 rounded hover:bg-white/10 transition"
           >
             Logout
-          </Link>
+          </button>
         </li>
+
         <li>
           <Link
             href="/about-developers"
