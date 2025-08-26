@@ -10,6 +10,7 @@ export default function BlogPage() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    // Start fetching immediately but don't block the UI
     const fetchBlogs = async () => {
       try {
         const response = await fetch("/api/blogs");
@@ -27,7 +28,12 @@ export default function BlogPage() {
       }
     };
 
-    fetchBlogs();
+    // Small delay to ensure skeleton is visible for better UX
+    const timer = setTimeout(() => {
+      fetchBlogs();
+    }, 100);
+
+    return () => clearTimeout(timer);
   }, []);
 
   return (
@@ -60,11 +66,11 @@ export default function BlogPage() {
           </div>
         )}
 
-        {/* Blogs Grid */}
+        {/* Blogs Grid - Always show skeleton first for immediate loading */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {loading ? (
-            // Show skeleton loading while fetching
-            Array.from({ length: 6 }).map((_, index) => (
+            // Show skeleton loading immediately
+            Array.from({ length: 9 }).map((_, index) => (
               <BlogCardSkeleton key={index} />
             ))
           ) : blogs.length > 0 ? (

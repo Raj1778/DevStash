@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Menu } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
 import Link from "next/link";
@@ -7,20 +7,36 @@ import { usePathname } from "next/navigation";
 
 export default function Navbar({ home }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
   const pathname = usePathname();
 
   // List of paths where navbar should not be shown
   const hiddenPaths = ["/login", "/register", "/auth/login", "/auth/register"];
 
+  // Check authentication status
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const response = await fetch("/api/me");
+        if (response.ok) {
+          const data = await response.json();
+          setUser(data.user);
+        }
+      } catch (error) {
+        console.log("User not authenticated");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, []);
+
   // Don't render navbar on specified paths
   if (hiddenPaths.includes(pathname)) {
     return null;
   }
-
-  // Alternative: Hide navbar for all auth-related paths
-  // if (pathname.startsWith("/auth/")) {
-  //   return null;
-  // }
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -33,11 +49,25 @@ export default function Navbar({ home }) {
         <Link href="/">
           <h1 className="text-white text-2xl font-bold">DevStash</h1>
         </Link>
-        <div
-          className="flex items-center justify-center h-10 w-10 cursor-pointer "
-          onClick={toggleSidebar}
-        >
-          <Menu className="text-white text-2xl" />
+        
+        <div className="flex items-center space-x-4">
+          {/* Login Button - Show when user is not authenticated */}
+          {!loading && !user && (
+            <Link
+              href="/login"
+              className="px-4 py-2 bg-white text-black rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors"
+            >
+              Login
+            </Link>
+          )}
+          
+          {/* Menu Button */}
+          <div
+            className="flex items-center justify-center h-10 w-10 cursor-pointer"
+            onClick={toggleSidebar}
+          >
+            <Menu className="text-white text-2xl" />
+          </div>
         </div>
       </div>
 

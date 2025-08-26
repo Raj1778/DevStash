@@ -283,7 +283,12 @@ export default function Home() {
       }
     };
 
-    fetchData();
+    // Small delay to ensure skeleton is visible for better UX
+    const timer = setTimeout(() => {
+      fetchData();
+    }, 100);
+
+    return () => clearTimeout(timer);
   }, []); // Empty dependency array - only run once on mount
 
   // Function to manually refresh data (for rate limit retry button)
@@ -423,6 +428,26 @@ export default function Home() {
           </div>
         )}
 
+        {/* Login to See History Notification */}
+        {!user && (
+          <div className="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-emerald-400 font-medium mb-1">Login to See Your History</h3>
+                <p className="text-emerald-300 text-sm">
+                  Sign in to view your GitHub commits, LeetCode progress, and personalized dashboard
+                </p>
+              </div>
+              <Link
+                href="/login"
+                className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm hover:bg-emerald-700 transition-colors"
+              >
+                Login Now
+              </Link>
+            </div>
+          </div>
+        )}
+
         {/* GitHub Rate Limit Notification */}
         {user && user.githubUsername && githubRateLimited && (
           <div className="mb-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl">
@@ -463,15 +488,7 @@ export default function Home() {
           </div>
         )}
 
-        {/* Background Refresh Indicator */}
-        {backgroundLoading && (
-          <div className="mb-6 p-3 bg-blue-500/10 border border-blue-500/30 rounded-xl">
-            <div className="flex items-center space-x-2">
-              <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
-              <span className="text-blue-400 text-sm">Refreshing data in background...</span>
-            </div>
-          </div>
-        )}
+ 
 
                 {/* Stats Overview - Mobile-first grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-8 md:mb-8">

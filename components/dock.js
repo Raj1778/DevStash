@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { FloatingDock as DockUI } from "@/components/ui/dockui";
 import { usePathname } from "next/navigation";
 import {
@@ -12,6 +12,24 @@ import {
 
 export function FloatingDockDemo() {
   const pathname = usePathname();
+  const [user, setUser] = useState(null);
+
+  // Check authentication status to get GitHub username
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const response = await fetch("/api/me");
+        if (response.ok) {
+          const data = await response.json();
+          setUser(data.user);
+        }
+      } catch (error) {
+        console.log("User not authenticated");
+      }
+    };
+
+    checkAuth();
+  }, []);
 
   // pages where dock should NOT be shown
   const excludedPaths = ["/Notes", "/about-developers", "/login", "/register"];
@@ -54,7 +72,9 @@ export function FloatingDockDemo() {
       icon: (
         <IconBrandGithub className="h-full w-full text-neutral-500 dark:text-neutral-300" />
       ),
-      href: "https://github.com/Raj1778",
+      href: user?.githubUsername 
+        ? `https://github.com/${user.githubUsername}` 
+        : "https://github.com",
     },
   ];
 

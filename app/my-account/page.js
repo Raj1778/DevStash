@@ -56,7 +56,12 @@ export default function MyAccountPage() {
       }
     };
 
-    fetchUser();
+    // Small delay to ensure skeleton is visible for better UX
+    const timer = setTimeout(() => {
+      fetchUser();
+    }, 100);
+
+    return () => clearTimeout(timer);
   }, [router]);
 
   const handleChange = (key, value) => {
@@ -135,32 +140,44 @@ export default function MyAccountPage() {
                 <label className="block text-sm text-gray-300 mb-2">
                   Display Name
                 </label>
-                <input
-                  type="text"
-                  value={settings.displayName}
-                  onChange={(e) => handleChange("displayName", e.target.value)}
-                  className="w-full px-4 py-3 bg-neutral-800 border border-gray-700 rounded-lg text-white focus:border-gray-500 focus:outline-none transition-colors duration-200"
-                />
+                {loading ? (
+                  <div className="h-12 bg-neutral-800 rounded-lg animate-pulse"></div>
+                ) : (
+                  <input
+                    type="text"
+                    value={settings.displayName}
+                    onChange={(e) => handleChange("displayName", e.target.value)}
+                    className="w-full px-4 py-3 bg-neutral-800 border border-gray-700 rounded-lg text-white focus:border-gray-500 focus:outline-none transition-colors duration-200"
+                  />
+                )}
               </div>
               <div>
                 <label className="block text-sm text-gray-300 mb-2">
                   Email
                 </label>
-                <input
-                  type="email"
-                  value={settings.email}
-                  onChange={(e) => handleChange("email", e.target.value)}
-                  className="w-full px-4 py-3 bg-neutral-800 border border-gray-700 rounded-lg text-white focus:border-gray-500 focus:outline-none transition-colors duration-200"
-                />
+                {loading ? (
+                  <div className="h-12 bg-neutral-800 rounded-lg animate-pulse"></div>
+                ) : (
+                  <input
+                    type="email"
+                    value={settings.email}
+                    onChange={(e) => handleChange("email", e.target.value)}
+                    className="w-full px-4 py-3 bg-neutral-800 border border-gray-700 rounded-lg text-white focus:border-gray-500 focus:outline-none transition-colors duration-200"
+                  />
+                )}
               </div>
               <div>
                 <label className="block text-sm text-gray-300 mb-2">Bio</label>
-                <textarea
-                  value={settings.bio}
-                  onChange={(e) => handleChange("bio", e.target.value)}
-                  rows={3}
-                  className="w-full px-4 py-3 bg-neutral-800 border border-gray-700 rounded-lg text-white focus:border-gray-500 focus:outline-none transition-colors duration-200 resize-none"
-                />
+                {loading ? (
+                  <div className="h-24 bg-neutral-800 rounded-lg animate-pulse"></div>
+                ) : (
+                  <textarea
+                    value={settings.bio}
+                    onChange={(e) => handleChange("bio", e.target.value)}
+                    rows={3}
+                    className="w-full px-4 py-3 bg-neutral-800 border border-gray-700 rounded-lg text-white focus:border-gray-500 focus:outline-none transition-colors duration-200 resize-none"
+                  />
+                )}
               </div>
             </div>
           </section>
@@ -177,13 +194,17 @@ export default function MyAccountPage() {
                 </label>
                 <div className="flex items-center space-x-3">
                   <div className="flex-1">
-                    <input
-                      type="text"
-                      value={settings.githubUsername}
-                      onChange={(e) => handleChange("githubUsername", e.target.value)}
-                      placeholder="Enter your GitHub username"
-                      className="w-full px-4 py-3 bg-neutral-800 border border-gray-700 rounded-lg text-white focus:border-gray-500 focus:outline-none transition-colors duration-200"
-                    />
+                    {loading ? (
+                      <div className="h-12 bg-neutral-800 rounded-lg animate-pulse"></div>
+                    ) : (
+                      <input
+                        type="text"
+                        value={settings.githubUsername}
+                        onChange={(e) => handleChange("githubUsername", e.target.value)}
+                        placeholder="Enter your GitHub username"
+                        className="w-full px-4 py-3 bg-neutral-800 border border-gray-700 rounded-lg text-white focus:border-gray-500 focus:outline-none transition-colors duration-200"
+                      />
+                    )}
                   </div>
                   <div className="text-gray-400">
                     <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
@@ -195,29 +216,34 @@ export default function MyAccountPage() {
                   This will be used to fetch your GitHub commits and repositories
                 </p>
               </div>
-
+              
               <div>
                 <label className="block text-sm text-gray-300 mb-2">
                   LeetCode Username
                 </label>
                 <div className="flex items-center space-x-3">
                   <div className="flex-1">
-                    <input
-                      type="text"
-                      value={settings.leetcodeUsername}
-                      onChange={(e) => handleChange("leetcodeUsername", e.target.value)}
-                      placeholder="Enter your LeetCode username"
-                      className="w-full px-4 py-3 bg-neutral-800 border border-gray-700 rounded-lg text-white focus:border-gray-500 focus:outline-none transition-colors duration-200"
-                    />
+                    {loading ? (
+                      <div className="h-12 bg-neutral-800 rounded-lg animate-pulse"></div>
+                    ) : (
+                      <input
+                        type="text"
+                        value={settings.leetcodeUsername}
+                        onChange={(e) => handleChange("leetcodeUsername", e.target.value)}
+                        placeholder="Enter your LeetCode username"
+                        className="w-full px-4 py-3 bg-neutral-800 border border-gray-700 rounded-lg text-white focus:border-gray-500 focus:outline-none transition-colors duration-200"
+                      />
+                    )}
                   </div>
                   <div className="text-gray-400">
                     <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M13.483 0a1.374 1.374 0 0 0-.961.438L7.116 6.226l-3.854 4.126a1.64 1.64 0 0 0-.049 2.229 1.644 1.644 0 0 0 2.233.049L8.293 9.93l.926 1.05a1.64 1.64 0 0 0 2.229.049l3.854-4.126 5.274 5.274a1.374 1.374 0 0 0 1.943 0 1.374 1.374 0 0 0 0-1.943L13.483 0z"/>
+                      <path d="M20.01 3.5c0-.828-.656-1.5-1.5-1.5h-15c-.828 0-1.5.672-1.5 1.5v17c0 .828.672 1.5 1.5 1.5h15c.844 0 1.5-.672 1.5-1.5v-17zm-1.5 0v17h-15v-17h15z"/>
+                      <path d="M14.5 7.5c0-.828-.656-1.5-1.5-1.5h-3c-.828 0-1.5.672-1.5 1.5v3c0 .828.672 1.5 1.5 1.5h3c.844 0 1.5-.672 1.5-1.5v-3zm-1.5 0v3h-3v-3h3z"/>
                     </svg>
                   </div>
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
-                  This will be used to fetch your LeetCode problem solving statistics
+                  This will be used to fetch your LeetCode problem solving stats
                 </p>
               </div>
             </div>

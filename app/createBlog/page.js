@@ -36,7 +36,12 @@ export default function CreateBlogPage() {
       }
     };
 
-    fetchUser();
+    // Small delay to ensure skeleton is visible for better UX
+    const timer = setTimeout(() => {
+      fetchUser();
+    }, 100);
+
+    return () => clearTimeout(timer);
   }, []);
 
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -112,7 +117,7 @@ export default function CreateBlogPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-[#0a0a0a] text-white py-16">
       {/* Loading Overlay */}
       {isSubmitting && (
         <div className="fixed inset-0 bg-black bg-opacity-80 z-50 flex items-center justify-center backdrop-blur-sm">
@@ -194,14 +199,14 @@ export default function CreateBlogPage() {
         </div>
       )}
 
-      <div className="max-w-3xl mx-auto px-6 py-16">
+      <div className="max-w-4xl mx-auto px-6">
         {/* Header */}
-        <div className="mb-12">
-          <h1 className="text-4xl md:text-5xl font-light text-white mb-3">
-            What are you thinking?
+        <div className="mb-12 text-center">
+          <h1 className="text-4xl md:text-5xl font-light text-white mb-4">
+            Create a New Blog
           </h1>
           <p className="text-gray-400 text-lg">
-            Share your thoughts with the world...
+            Share your thoughts, experiences, and insights with the community
           </p>
         </div>
 
@@ -226,102 +231,103 @@ export default function CreateBlogPage() {
         )}
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Author Name */}
+        <form onSubmit={handleSubmit} className="space-y-8">
+          {/* Title Field */}
           <div>
-            <label className="block text-gray-300 text-sm mb-2 font-medium">
-              Author
+            <label htmlFor="title" className="block text-sm font-medium text-gray-300 mb-2">
+              Blog Title
             </label>
-            <input
-              type="text"
-              value={author}
-              onChange={(e) => setAuthor(e.target.value)}
-              placeholder={loading ? "Loading..." : "Your name"}
-              className="w-full px-3 py-2 bg-neutral-900 border border-neutral-800 rounded text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              required
-              disabled={isSubmitting || loading}
-            />
-            {loading && (
-              <p className="text-gray-500 text-sm mt-1">Loading your profile...</p>
+            {loading ? (
+              <div className="h-12 bg-gray-800/50 rounded-lg animate-pulse"></div>
+            ) : (
+              <input
+                type="text"
+                id="title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Enter your blog title..."
+                required
+              />
             )}
           </div>
 
-          {/* Blog Title */}
+          {/* Author Field */}
           <div>
-            <label className="block text-gray-300 text-sm mb-2 font-medium">
-              Title
+            <label htmlFor="author" className="block text-sm font-medium text-gray-300 mb-2">
+              Author
             </label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Blog title"
-              className="w-full px-3 py-2 bg-neutral-900 border border-neutral-800 rounded text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
-              required
-              disabled={isSubmitting}
-            />
+            {loading ? (
+              <div className="h-12 bg-gray-800/50 rounded-lg animate-pulse"></div>
+            ) : (
+              <input
+                type="text"
+                id="author"
+                value={author}
+                onChange={(e) => setAuthor(e.target.value)}
+                className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50"
+                placeholder={loading ? "Loading..." : "Author name"}
+                disabled={loading || isSubmitting}
+                required
+              />
+            )}
+            {loading && (
+              <p className="mt-2 text-sm text-gray-400">Loading your profile...</p>
+            )}
           </div>
 
-          {/* Tags */}
+          {/* Tags Field */}
           <div>
-            <label className="block text-gray-300 text-sm mb-2 font-medium">
+            <label htmlFor="tags" className="block text-sm font-medium text-gray-300 mb-2">
               Tags (comma-separated)
             </label>
-            <input
-              type="text"
-              value={tags}
-              onChange={(e) => setTags(e.target.value)}
-              placeholder="technology, programming, webdev"
-              className="w-full px-3 py-2 bg-neutral-900 border border-neutral-800 rounded text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
-              disabled={isSubmitting}
-            />
+            {loading ? (
+              <div className="h-12 bg-gray-800/50 rounded-lg animate-pulse"></div>
+            ) : (
+              <input
+                type="text"
+                id="tags"
+                value={tags}
+                onChange={(e) => setTags(e.target.value)}
+                className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="e.g., React, JavaScript, Web Development"
+              />
+            )}
           </div>
 
-          {/* Blog Content */}
+          {/* Content Field */}
           <div>
-            <label className="block text-gray-300 text-sm mb-2 font-medium">
-              Content
+            <label htmlFor="content" className="block text-sm font-medium text-gray-300 mb-2">
+              Blog Content
             </label>
-            <textarea
-              rows={15}
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="Write your blog content here..."
-              className="w-full px-3 py-2 bg-neutral-900 border border-neutral-800 rounded text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none"
-              required
-              disabled={isSubmitting}
-            />
+            {loading ? (
+              <div className="h-64 bg-gray-800/50 rounded-lg animate-pulse"></div>
+            ) : (
+              <textarea
+                id="content"
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                rows={12}
+                className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
+                placeholder="Write your blog content here... You can use Markdown formatting."
+                required
+              />
+            )}
           </div>
 
           {/* Submit Button */}
           <div className="flex justify-end">
-            <button
-              type="submit"
-              disabled={
-                !title.trim() ||
-                !content.trim() ||
-                !author.trim() ||
-                isSubmitting
-              }
-              className="px-8 py-3 bg-white text-black rounded-full font-medium hover:bg-gray-200 transition-all duration-200 active:scale-95 disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed flex items-center space-x-2"
-            >
-              {!isSubmitting && (
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
-                  />
-                </svg>
-              )}
-              <span>{isSubmitting ? "Publishing..." : "Publish Blog"}</span>
-            </button>
+            {loading ? (
+              <div className="h-12 w-32 bg-gray-800/50 rounded-lg animate-pulse"></div>
+            ) : (
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="px-8 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {isSubmitting ? "Creating..." : "Create Blog"}
+              </button>
+            )}
           </div>
         </form>
       </div>

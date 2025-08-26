@@ -200,15 +200,16 @@ const ProjectCard = ({ project }) => {
 };
 
 export default function ProjectsPage() {
-  const [filter, setFilter] = useState("all");
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
+  const [filter, setFilter] = useState("all");
 
   useEffect(() => {
-    const fetchProjects = async () => {
+    // Start fetching immediately but don't block the UI
+    const fetchData = async () => {
       try {
-        // Get user data first
+        // Fetch user data first
         const userRes = await fetch("/api/me");
         if (userRes.ok) {
           const userData = await userRes.json();
@@ -217,42 +218,50 @@ export default function ProjectsPage() {
             
             // Fetch GitHub repositories if username is available
             if (userData.user.githubUsername) {
-              const githubRes = await fetch(`/api/github?username=${userData.user.githubUsername}`);
-              if (githubRes.ok) {
-                const githubData = await githubRes.json();
-                
-                // Convert GitHub repos to project format
-                const processedProjects = githubData.repositories
-                  .filter(repo => !repo.private && !repo.archived) // Only show public, non-archived repos
-                  .map(repo => ({
-                    id: repo.id,
-                    name: repo.name,
-                    description: repo.description || "No description available",
-                    language: repo.language || "Unknown",
-                    status: repo.fork ? "Forked" : "Active",
-                    lastUpdated: formatDate(repo.lastUpdated),
-                    stars: repo.stars,
-                    size: formatSize(repo.size),
-                    techStack: repo.topics || [],
-                    github: repo.url,
-                    demo: repo.homepage || null,
-                    fork: repo.fork,
-                    forks: repo.forks
-                  }));
-                
-                setProjects(processedProjects);
+              try {
+                const githubRes = await fetch(`/api/github?username=${userData.user.githubUsername}`);
+                if (githubRes.ok) {
+                  const githubData = await githubRes.json();
+                  
+                  // Process repositories to fit ProjectCard structure
+                  const processedProjects = githubData.repositories
+                    .filter(repo => !repo.archived && repo.visibility === 'public')
+                    .map(repo => ({
+                      id: repo.id,
+                      name: repo.name,
+                      description: repo.description || "No description available",
+                      language: repo.language || "Unknown",
+                      status: repo.fork ? "Forked" : "Active",
+                      lastUpdated: formatDate(repo.updated_at),
+                      stars: repo.stargazers_count,
+                      size: formatSize(repo.size),
+                      techStack: repo.topics || [],
+                      github: repo.html_url,
+                      demo: repo.homepage || null,
+                      forks: repo.forks_count
+                    }));
+                  
+                  setProjects(processedProjects);
+                }
+              } catch (error) {
+                console.error('Failed to fetch GitHub data:', error);
               }
             }
           }
         }
       } catch (error) {
-        console.error('Failed to fetch projects:', error);
+        console.error('Failed to fetch data:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchProjects();
+    // Small delay to ensure skeleton is visible for better UX
+    const timer = setTimeout(() => {
+      fetchData();
+    }, 100);
+
+    return () => clearTimeout(timer);
   }, []);
 
   // Helper functions
