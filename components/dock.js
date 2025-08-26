@@ -13,6 +13,7 @@ import {
 export function FloatingDockDemo() {
   const pathname = usePathname();
   const [user, setUser] = useState(null);
+  const [isMobile, setIsMobile] = useState(false);
 
   // Check authentication status to get GitHub username
   useEffect(() => {
@@ -31,10 +32,23 @@ export function FloatingDockDemo() {
     checkAuth();
   }, []);
 
+  // Check if device is mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   // pages where dock should NOT be shown
   const excludedPaths = ["/Notes", "/about-developers", "/login", "/register"];
 
-  if (excludedPaths.includes(pathname)) {
+  // Hide dock on mobile devices
+  if (isMobile || excludedPaths.includes(pathname)) {
     return null;
   }
 
@@ -81,8 +95,6 @@ export function FloatingDockDemo() {
   return (
     <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50">
       <DockUI
-        // remove this in prod
-        mobileClassName="translate-y-20"
         items={links}
       />
     </div>

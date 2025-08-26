@@ -2,7 +2,7 @@
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-export default function Sidebar() {
+export default function Sidebar({ user }) {
   const router = useRouter();
 
   async function handleLogout() {
@@ -20,6 +20,7 @@ export default function Sidebar() {
         <li>
           <Link
             href="/"
+            prefetch={true}
             className="block py-2 px-4 rounded hover:bg-white/10 transition"
           >
             Dashboard
@@ -28,6 +29,7 @@ export default function Sidebar() {
         <li>
           <Link
             href="/projects"
+            prefetch={true}
             className="block py-2 px-4 rounded hover:bg-white/10 transition"
           >
             Projects
@@ -36,6 +38,7 @@ export default function Sidebar() {
         <li>
           <Link
             href="/my-account"
+            prefetch={true}
             className="block py-2 px-4 rounded hover:bg-white/10 transition"
           >
             My Account
@@ -43,7 +46,9 @@ export default function Sidebar() {
         </li>
         <li>
           <a
-            href="https://www.linkedin.com/in/your-profile"
+            href={user?.linkedinUsername 
+              ? `https://www.linkedin.com/in/${user.linkedinUsername}` 
+              : "https://www.linkedin.com/in/your-profile"}
             target="_blank"
             rel="noopener noreferrer"
             className="block py-2 px-4 rounded hover:bg-white/10 transition"
@@ -65,6 +70,7 @@ export default function Sidebar() {
         <li>
           <Link
             href="/about-developers"
+            prefetch={true}
             className="block py-2 px-4 rounded bg-blue-700 hover:bg-blue-800 transition"
           >
             About Developer

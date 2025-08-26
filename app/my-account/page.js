@@ -17,6 +17,7 @@ export default function MyAccountPage() {
     bio: "Full-stack developer passionate about clean code",
     githubUsername: "",
     leetcodeUsername: "",
+    linkedinUsername: "",
 
     // Preferences
     theme: "dark",
@@ -42,7 +43,8 @@ export default function MyAccountPage() {
               displayName: data.user.name || "",
               email: data.user.email || "",
               githubUsername: data.user.githubUsername || "",
-              leetcodeUsername: data.user.leetcodeUsername || ""
+              leetcodeUsername: data.user.leetcodeUsername || "",
+              linkedinUsername: data.user.linkedinUsername || ""
             }));
           }
         } else {
@@ -81,7 +83,8 @@ export default function MyAccountPage() {
         body: JSON.stringify({
           name: settings.displayName,
           githubUsername: settings.githubUsername,
-          leetcodeUsername: settings.leetcodeUsername
+          leetcodeUsername: settings.leetcodeUsername,
+          linkedinUsername: settings.linkedinUsername
         }),
       });
 
@@ -244,6 +247,36 @@ export default function MyAccountPage() {
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
                   This will be used to fetch your LeetCode problem solving stats
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm text-gray-300 mb-2">
+                  LinkedIn Username
+                </label>
+                <div className="flex items-center space-x-3">
+                  <div className="flex-1">
+                    {loading ? (
+                      <div className="h-12 bg-neutral-800 rounded-lg animate-pulse"></div>
+                    ) : (
+                      <input
+                        type="text"
+                        value={settings.linkedinUsername}
+                        onChange={(e) => handleChange("linkedinUsername", e.target.value)}
+                        placeholder="Enter your LinkedIn username"
+                        className="w-full px-4 py-3 bg-neutral-800 border border-gray-700 rounded-lg text-white focus:border-gray-500 focus:outline-none transition-colors duration-200"
+                      />
+                    )}
+                  </div>
+                  <div className="text-gray-400">
+                    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M20.01 3.5c0-.828-.656-1.5-1.5-1.5h-15c-.828 0-1.5.672-1.5 1.5v17c0 .828.672 1.5 1.5 1.5h15c.844 0 1.5-.672 1.5-1.5v-17zm-1.5 0v17h-15v-17h15z"/>
+                      <path d="M14.5 7.5c0-.828-.656-1.5-1.5-1.5h-3c-.828 0-1.5.672-1.5 1.5v3c0 .828.672 1.5 1.5 1.5h3c.844 0 1.5-.672 1.5-1.5v-3zm-1.5 0v3h-3v-3h3z"/>
+                    </svg>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  This will be used to fetch your LinkedIn profile and connections
                 </p>
               </div>
             </div>

@@ -2,6 +2,10 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/db/mongodb";
 import Blog from "@/lib/models/Blog";
+import { cookies } from "next/headers";
+import { jwtVerify } from "jose";
+
+const secret = new TextEncoder().encode(process.env.JWT_SECRET || "dev-secret");
 
 function generateSlug(title) {
   return title
@@ -12,13 +16,24 @@ function generateSlug(title) {
     .trim();
 }
 
-export async function GET() {
+export async function GET(request) {
   try {
     await connectDB();
     console.log("Connected to database for blog fetching");
 
-    const blogs = await Blog.find({}).sort({ createdAt: -1 }).limit(50);
-    console.log(`Fetched ${blogs.length} blogs`);
+    const { searchParams } = new URL(request.url);
+    const userId = searchParams.get('userId');
+
+    let blogs;
+    if (userId) {
+      // Fetch blogs for specific user
+      blogs = await Blog.find({ userId }).sort({ createdAt: -1 }).limit(50);
+      console.log(`Fetched ${blogs.length} blogs for user ${userId}`);
+    } else {
+      // Fetch all blogs
+      blogs = await Blog.find({}).sort({ createdAt: -1 }).limit(50);
+      console.log(`Fetched ${blogs.length} blogs`);
+    }
 
     return NextResponse.json(blogs);
   } catch (error) {
@@ -32,8 +47,20 @@ export async function POST(request) {
     await connectDB();
     console.log("Connected to database for blog creation");
 
+    // Get user from JWT token
+    const cookieStore = await cookies();
+    const token = cookieStore.get("token")?.value;
+
+    if (!token) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
+
+    // Verify JWT
+    const { payload } = await jwtVerify(token, secret);
+    const userId = payload.userId;
+
     const { title, content, excerpt, author, tags } = await request.json();
-    console.log("Received data:", { title, content, excerpt, author, tags });
+    console.log("Received data:", { title, content, excerpt, author, tags, userId });
 
     const slug = generateSlug(title);
     console.log("Generated slug:", slug);
@@ -44,6 +71,7 @@ export async function POST(request) {
       content,
       excerpt,
       author,
+      userId,
       tags: tags || [], // Ensure tags is always an array
     });
 

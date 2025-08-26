@@ -49,7 +49,7 @@ export async function PUT(request) {
     // Verify JWT
     const { payload } = await jwtVerify(token, secret);
     const body = await request.json();
-    const { name, githubUsername, leetcodeUsername } = body;
+    const { name, githubUsername, leetcodeUsername, linkedinUsername } = body;
 
     // Update user profile
     const updatedUser = await User.findByIdAndUpdate(
@@ -57,7 +57,8 @@ export async function PUT(request) {
       {
         ...(name !== undefined && { name }),
         ...(githubUsername !== undefined && { githubUsername }),
-        ...(leetcodeUsername !== undefined && { leetcodeUsername })
+        ...(leetcodeUsername !== undefined && { leetcodeUsername }),
+        ...(linkedinUsername !== undefined && { linkedinUsername })
       },
       { new: true, runValidators: true }
     );

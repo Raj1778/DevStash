@@ -100,6 +100,98 @@ const LoadingSpinner = ({ size = 20 }) => (
   </svg>
 );
 
+// Code detection and formatting utilities
+const detectCodeBlocks = (content) => {
+  const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g;
+  const inlineCodeRegex = /`([^`]+)`/g;
+  
+  let formattedContent = content;
+  let codeBlocks = [];
+  let blockIndex = 0;
+  
+  // Replace code blocks with placeholders
+  formattedContent = formattedContent.replace(codeBlockRegex, (match, language, code) => {
+    const placeholder = `__CODE_BLOCK_${blockIndex}__`;
+    codeBlocks.push({
+      type: 'block',
+      language: language || 'text',
+      code: code.trim(),
+      placeholder
+    });
+    blockIndex++;
+    return placeholder;
+  });
+  
+  // Replace inline code with placeholders
+  formattedContent = formattedContent.replace(inlineCodeRegex, (match, code) => {
+    const placeholder = `__INLINE_CODE_${blockIndex}__`;
+    codeBlocks.push({
+      type: 'inline',
+      code: code,
+      placeholder
+    });
+    blockIndex++;
+    return placeholder;
+  });
+  
+  return { formattedContent, codeBlocks };
+};
+
+const formatCodeBlock = (codeBlock) => {
+  const { type, language, code } = codeBlock;
+  
+  if (type === 'inline') {
+    return (
+      <code className="bg-zinc-800 text-green-400 px-1.5 py-0.5 rounded text-sm font-mono">
+        {code}
+      </code>
+    );
+  }
+  
+  return (
+    <div className="my-4 rounded-lg overflow-hidden border border-zinc-700">
+      <div className="bg-zinc-800 px-4 py-2 border-b border-zinc-700 flex items-center justify-between">
+        <span className="text-xs text-zinc-400 font-mono uppercase">
+          {language || 'text'}
+        </span>
+        <button
+          onClick={() => navigator.clipboard.writeText(code)}
+          className="text-xs text-zinc-400 hover:text-white transition-colors"
+        >
+          Copy
+        </button>
+      </div>
+      <pre className="bg-zinc-900 p-4 overflow-x-auto">
+        <code className="text-sm font-mono text-zinc-100">
+          {code}
+        </code>
+      </pre>
+    </div>
+  );
+};
+
+const renderFormattedContent = (content) => {
+  const { formattedContent, codeBlocks } = detectCodeBlocks(content);
+  
+  // Split content by code block placeholders
+  const parts = formattedContent.split(/(__CODE_BLOCK_\d+__|__INLINE_CODE_\d+__)/);
+  
+  return parts.map((part, index) => {
+    const codeBlock = codeBlocks.find(block => block.placeholder === part);
+    
+    if (codeBlock) {
+      return <React.Fragment key={index}>{formatCodeBlock(codeBlock)}</React.Fragment>;
+    }
+    
+    // Regular text content
+    return (
+      <span key={index} className="whitespace-pre-wrap">
+        {part}
+      </span>
+    );
+  });
+};
+
 const Notes = () => {
   const [notes, setNotes] = useState([]);
   const [selectedNote, setSelectedNote] = useState(null);
@@ -112,6 +204,7 @@ const Notes = () => {
   const [saving, setSaving] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [previewMode, setPreviewMode] = useState(false);
 
   const saveTimeoutRef = useRef(null);
   const lastSavedRef = useRef({ title: "", content: "" });
@@ -641,6 +734,18 @@ const Notes = () => {
           </div>
 
           <div className="flex items-center space-x-4">
+            {selectedNote && (
+              <button
+                onClick={() => setPreviewMode(!previewMode)}
+                className={`px-3 py-1 rounded text-sm transition-colors ${
+                  previewMode 
+                    ? 'bg-blue-600 text-white' 
+                    : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+                }`}
+              >
+                {previewMode ? 'Edit' : 'Preview'}
+              </button>
+            )}
             {hasUnsavedChanges && !saving && (
               <div className="flex items-center text-amber-400 text-sm">
                 <div className="w-2 h-2 bg-amber-400 rounded-full mr-2"></div>
@@ -690,13 +795,21 @@ const Notes = () => {
 
               {/* Content */}
               <div className="flex-1 p-4 md:p-6 overflow-y-auto">
-                <textarea
-                  value={currentContent}
-                  onChange={(e) => setCurrentContent(e.target.value)}
-                  className="w-full h-full bg-transparent border-none outline-none text-white placeholder-zinc-500 resize-none text-base leading-relaxed"
-                  placeholder="Start writing your note..."
-                  style={{ minHeight: "400px" }}
-                />
+                {previewMode ? (
+                  <div className="prose prose-invert max-w-none">
+                    <div className="text-base leading-relaxed text-zinc-100">
+                      {renderFormattedContent(currentContent)}
+                    </div>
+                  </div>
+                ) : (
+                  <textarea
+                    value={currentContent}
+                    onChange={(e) => setCurrentContent(e.target.value)}
+                    className="w-full h-full bg-transparent border-none outline-none text-white placeholder-zinc-500 resize-none text-base leading-relaxed font-mono"
+                    placeholder="Start writing your note... Use ```language for code blocks and `code` for inline code"
+                    style={{ minHeight: "400px" }}
+                  />
+                )}
               </div>
             </div>
           ) : (
