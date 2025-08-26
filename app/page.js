@@ -4,6 +4,7 @@ import Recent from "@/components/Recent";
 import RecentBlogs from "@/components/RecentBlogs";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { StatCardSkeleton } from "@/components/Skeleton";
 
 // Quick Action Cards - Mobile optimized
 const QuickAction = ({ title, description, icon, onClick, href }) => {
@@ -101,27 +102,283 @@ const TrendingIcon = () => (
 
 export default function Home() {
   const [user, setUser] = useState(null);
+  const [stats, setStats] = useState({
+    leetcode: { totalSolved: 0, problemsThisWeek: 0 },
+    github: { commitsLast30Days: 0, commitsThisWeek: 0 },
+    blogs: { total: 0, thisMonth: 0 },
+    streak: { days: 0 }
+  });
+  const [loading, setLoading] = useState(true);
+  const [backgroundLoading, setBackgroundLoading] = useState(false);
+  const [githubRateLimited, setGithubRateLimited] = useState(false);
   const router = useRouter();
 
-  useEffect(() => {
-    fetch("/api/me")
-      .then((res) => {
-        if (res.ok) {
-          return res.json();
+  // Cache duration constants
+  const CACHE_DURATION = {
+    user: 30 * 60 * 1000,        // 30 minutes
+    github: 15 * 60 * 1000,      // 15 minutes
+    leetcode: 30 * 60 * 1000,    // 30 minutes
+  };
+
+  // Mobile detection for more conservative caching
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+  const MOBILE_CACHE_MULTIPLIER = 2; // Mobile devices cache data longer
+
+  // Helper function to check if cache is valid
+  const isCacheValid = (key, duration) => {
+    const cached = localStorage.getItem(key);
+    if (!cached) return false;
+    
+    try {
+      const data = JSON.parse(cached);
+      // Use longer cache duration on mobile
+      const effectiveDuration = isMobile ? duration * MOBILE_CACHE_MULTIPLIER : duration;
+      return (Date.now() - data.timestamp) < effectiveDuration;
+    } catch {
+      return false;
+    }
+  };
+
+  // Helper function to get cached data
+  const getCachedData = (key) => {
+    try {
+      const cached = localStorage.getItem(key);
+      return cached ? JSON.parse(cached).data : null;
+    } catch {
+      return null;
+    }
+  };
+
+  // Helper function to set cached data
+  const setCachedData = (key, data) => {
+    try {
+      localStorage.setItem(key, JSON.stringify({
+        data,
+        timestamp: Date.now()
+      }));
+    } catch (error) {
+      console.error('Failed to cache data:', error);
+    }
+  };
+
+  // Function to fetch stats data
+  const fetchStatsData = async () => {
+    const currentUser = user || getCachedData('user');
+    if (!currentUser) return;
+
+    const newStats = { ...stats };
+
+    // Fetch GitHub data if username is available
+    if (currentUser.githubUsername) {
+      try {
+        const githubRes = await fetch(`/api/github?username=${currentUser.githubUsername}`);
+        if (githubRes.ok) {
+          const githubData = await githubRes.json();
+          newStats.github = {
+            commitsLast30Days: githubData.commits.last30Days,
+            commitsThisWeek: githubData.commits.thisWeek
+          };
+          
+          // Log if rate limited
+          if (githubData.rateLimited) {
+            console.log('GitHub data was rate limited:', githubData.message);
+            setGithubRateLimited(true);
+          } else {
+            setGithubRateLimited(false);
+          }
+        } else if (githubRes.status === 429) {
+          // Rate limited
+          console.log('GitHub API rate limited');
+          setGithubRateLimited(true);
+          newStats.github = {
+            commitsLast30Days: 'Rate Limited',
+            commitsThisWeek: 'Rate Limited'
+          };
         } else {
-          // Don't redirect, just don't set user
-          return null;
+          console.error('GitHub API error:', githubRes.status);
+          setGithubRateLimited(false);
         }
-      })
-      .then((data) => {
-        if (data && data.user) {
-          setUser(data.user);
+      } catch (error) {
+        console.error('Failed to fetch GitHub data:', error);
+      }
+    }
+
+    // Fetch LeetCode data if username is available
+    if (currentUser.leetcodeUsername) {
+      try {
+        const leetcodeRes = await fetch(`/api/leetcode?username=${currentUser.leetcodeUsername}`);
+        if (leetcodeRes.ok) {
+          const leetcodeData = await leetcodeRes.json();
+          console.log('LeetCode data received:', leetcodeData);
+          
+          newStats.leetcode = {
+            totalSolved: leetcodeData.totalSolved || 0,
+            problemsThisWeek: leetcodeData.problemsThisWeek || 0
+          };
+        } else {
+          console.error('LeetCode API error:', leetcodeRes.status);
+          const errorData = await leetcodeRes.json().catch(() => ({}));
+          console.error('LeetCode error details:', errorData);
         }
-      })
-      .catch((error) => {
+      } catch (error) {
+        console.error('Failed to fetch LeetCode data:', error);
+      }
+    }
+
+    // Update stats and cache
+    setStats(newStats);
+    setCachedData('stats', newStats);
+    console.log('Fetched fresh stats data');
+  };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Check if we have cached user data
+        if (isCacheValid('user', CACHE_DURATION.user)) {
+          const cachedUser = getCachedData('user');
+          setUser(cachedUser);
+          console.log('Using cached user data');
+          
+          // If we have user data but no stats, fetch stats
+          if (!isCacheValid('stats', CACHE_DURATION.github)) {
+            await fetchStatsData();
+          }
+        } else {
+          // Fetch user data
+          const userRes = await fetch("/api/me");
+          if (userRes.ok) {
+            const userData = await userRes.json();
+            if (userData && userData.user) {
+              setUser(userData.user);
+              setCachedData('user', userData.user);
+              console.log('Fetched fresh user data');
+              
+              // Fetch stats after getting user data
+              await fetchStatsData();
+            } else {
+              // User not logged in, clear any cached data
+              localStorage.removeItem('user');
+              localStorage.removeItem('stats');
+              console.log('User not logged in, cleared cache');
+            }
+          } else {
+            // User not logged in, clear any cached data
+            localStorage.removeItem('user');
+            localStorage.removeItem('stats');
+            console.log('User not logged in, cleared cache');
+          }
+        }
+
+        // Check if we have cached stats data
+        if (isCacheValid('stats', CACHE_DURATION.github)) {
+          const cachedStats = getCachedData('stats');
+          setStats(cachedStats);
+          console.log('Using cached stats data');
+        }
+      } catch (error) {
         console.log("User not logged in, showing public view");
-      });
-  }, []);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []); // Empty dependency array - only run once on mount
+
+  // Function to manually refresh data (for rate limit retry button)
+  const refreshData = async () => {
+    setLoading(true);
+    
+    // Clear cache to force fresh fetch
+    localStorage.removeItem('stats');
+    localStorage.removeItem('user');
+    
+    // Fetch fresh data
+    try {
+      const userRes = await fetch("/api/me");
+      if (userRes.ok) {
+        const userData = await userRes.json();
+        if (userData && userData.user) {
+          setUser(userData.user);
+          setCachedData('user', userData.user);
+          
+          // Fetch fresh stats
+          await fetchStatsData();
+        }
+      }
+    } catch (error) {
+      console.error('Failed to refresh data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Effect to handle user data changes and fetch stats when needed
+  useEffect(() => {
+    if (user && !isCacheValid('stats', CACHE_DURATION.github)) {
+      console.log('User data available but stats cache expired, fetching fresh stats');
+      fetchStatsData();
+    }
+    
+    // Check if usernames have changed (user might have updated their profile)
+    const cachedStats = getCachedData('stats');
+    if (cachedStats && user) {
+      const cachedUser = getCachedData('user');
+      if (cachedUser && (
+        cachedUser.githubUsername !== user.githubUsername ||
+        cachedUser.leetcodeUsername !== user.leetcodeUsername
+      )) {
+        console.log('Usernames changed, clearing stats cache and fetching fresh data');
+        localStorage.removeItem('stats');
+        fetchStatsData();
+      }
+    }
+
+    // Background refresh: if cache is getting old but not expired, refresh in background
+    if (user && isCacheValid('stats', CACHE_DURATION.github * 2)) { // If cache is older than 30 minutes
+      const cachedStats = getCachedData('stats');
+      if (cachedStats) {
+        console.log('Background refresh: stats cache getting old, refreshing in background');
+        setBackgroundLoading(true);
+        // Don't await this - let it run in background
+        fetchStatsData().then(() => {
+          console.log('Background refresh completed');
+          setBackgroundLoading(false);
+        }).catch(error => {
+          console.error('Background refresh failed:', error);
+          setBackgroundLoading(false);
+        });
+      }
+    }
+  }, [user]);
+
+  // Effect to handle page focus (when user returns to dashboard)
+  useEffect(() => {
+    const handleFocus = () => {
+      // Check if we need to refresh data when user returns to the page
+      if (user && !isCacheValid('stats', CACHE_DURATION.github)) {
+        console.log('Page focused, stats cache expired, fetching fresh data');
+        fetchStatsData();
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      // Check if we need to refresh data when page becomes visible
+      if (user && !isCacheValid('stats', CACHE_DURATION.github)) {
+        console.log('Page visible, stats cache expired, fetching fresh data');
+        fetchStatsData();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [user]);
 
   return (
     <div className="bg-[#0a0a0a] min-h-screen min-w-[320px] flex flex-col relative">
@@ -146,12 +403,109 @@ export default function Home() {
           </p>
         </div>
 
-        {/* Stats Overview - Mobile-first grid */}
+        {/* Connect Accounts Notification */}
+        {user && (!user.githubUsername || !user.leetcodeUsername) && (
+          <div className="mb-6 p-4 bg-blue-500/10 border border-blue-500/30 rounded-xl">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-blue-400 font-medium mb-1">Connect Your Accounts</h3>
+                <p className="text-blue-300 text-sm">
+                  Add your GitHub and LeetCode usernames to see your real-time stats
+                </p>
+              </div>
+              <Link
+                href="/my-account"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors"
+              >
+                Connect Now
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {/* GitHub Rate Limit Notification */}
+        {user && user.githubUsername && githubRateLimited && (
+          <div className="mb-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-yellow-400 font-medium mb-1">GitHub API Rate Limited</h3>
+                <p className="text-yellow-300 text-sm">
+                  GitHub API rate limit exceeded. Your commit data will be available once the limit resets.
+                </p>
+              </div>
+              <button
+                onClick={refreshData}
+                className="px-4 py-2 bg-yellow-600 text-white rounded-lg text-sm hover:bg-yellow-700 transition-colors"
+              >
+                Try Again
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* GitHub Rate Limit Low Notification */}
+        {user && user.githubUsername && typeof stats.github.commitsLast30Days === 'string' && stats.github.commitsLast30Days === 'Rate Limit Critical' && (
+          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-xl">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-red-400 font-medium mb-1">GitHub API Rate Limit Critical</h3>
+                <p className="text-red-300 text-sm">
+                  GitHub API rate limit is critically low. Some data may be limited until the limit resets.
+                </p>
+              </div>
+              <button
+                onClick={refreshData}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700 transition-colors"
+              >
+                Try Again
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Background Refresh Indicator */}
+        {backgroundLoading && (
+          <div className="mb-6 p-3 bg-blue-500/10 border border-blue-500/30 rounded-xl">
+            <div className="flex items-center space-x-2">
+              <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+              <span className="text-blue-400 text-sm">Refreshing data in background...</span>
+            </div>
+          </div>
+        )}
+
+                {/* Stats Overview - Mobile-first grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-8 md:mb-8">
-          <StatCard label="LeetCode Solved" value="247" trend="+5 this week" />
-          <StatCard label="Blogs Posted" value="12" trend="+2 this month" />
-          <StatCard label="GitHub Commits" value="156" trend="+8 this week" />
-          <StatCard label="Current Streak" value="15" trend="days" />
+          {loading ? (
+            <>
+              <StatCardSkeleton />
+              <StatCardSkeleton />
+              <StatCardSkeleton />
+              <StatCardSkeleton />
+            </>
+          ) : (
+            <>
+              <StatCard 
+                label="LeetCode Solved" 
+                value={user?.leetcodeUsername ? stats.leetcode.totalSolved.toString() : "0"} 
+                trend={user?.leetcodeUsername ? `+${stats.leetcode.problemsThisWeek} this week` : "Connect account"} 
+              />
+              <StatCard 
+                label="Blogs Posted" 
+                value={stats.blogs.total.toString()} 
+                trend={`+${stats.blogs.thisMonth} this month`} 
+              />
+              <StatCard 
+                label="GitHub Commits" 
+                value={user?.githubUsername ? (typeof stats.github.commitsLast30Days === 'string' ? stats.github.commitsLast30Days : stats.github.commitsLast30Days.toString()) : "0"} 
+                trend={user?.githubUsername ? (typeof stats.github.commitsThisWeek === 'string' ? stats.github.commitsThisWeek : `+${stats.github.commitsThisWeek} this week`) : "Connect account"} 
+              />
+              <StatCard 
+                label="Current Streak" 
+                value={stats.streak.days.toString()} 
+                trend="days" 
+              />
+            </>
+          )}
         </div>
 
         {/* Quick Actions - Single column on mobile for better touch targets */}
@@ -172,12 +526,21 @@ export default function Home() {
               icon={<BookIcon />}
               href="/projects" // Using Link instead of onClick
             />
-            <QuickAction
-              title="Trending in Tech"
-              description="Discover popular topics"
-              icon={<TrendingIcon />}
-              onClick={() => console.log("Open search")}
-            />
+            {user && (!user.githubUsername || !user.leetcodeUsername) ? (
+              <QuickAction
+                title="Connect Accounts"
+                description="Add GitHub & LeetCode usernames"
+                icon={<TrendingIcon />}
+                href="/my-account"
+              />
+            ) : (
+              <QuickAction
+                title="Trending in Tech"
+                description="Discover popular topics"
+                icon={<TrendingIcon />}
+                onClick={() => console.log("Open search")}
+              />
+            )}
           </div>
         </div>
 
@@ -191,7 +554,7 @@ export default function Home() {
               View all
             </button>
           </div>
-          <Recent />
+          <Recent loading={loading} />
         </div>
 
         {/* Recent Blogs */}
@@ -204,7 +567,7 @@ export default function Home() {
               View all blogs
             </button>
           </div>
-          <RecentBlogs />
+          <RecentBlogs loading={loading} />
         </div>
       </div>
     </div>

@@ -12,6 +12,21 @@ function generateSlug(title) {
     .trim();
 }
 
+export async function GET() {
+  try {
+    await connectDB();
+    console.log("Connected to database for blog fetching");
+
+    const blogs = await Blog.find({}).sort({ createdAt: -1 }).limit(50);
+    console.log(`Fetched ${blogs.length} blogs`);
+
+    return NextResponse.json(blogs);
+  } catch (error) {
+    console.error("Error fetching blogs:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
 export async function POST(request) {
   try {
     await connectDB();

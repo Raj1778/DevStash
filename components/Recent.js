@@ -1,10 +1,23 @@
-const Recent = () => {
+const Recent = ({ loading = false }) => {
   const RecentWork = [
     { title: "Zyngle Project" },
     { title: "Raj's Blog" },
     { title: "DevStash" },
     { title: "Next.js Tutorial" },
   ];
+
+  if (loading) {
+    return (
+      <>
+        <div className="flex overflow-x-auto gap-8 md:gap-12 p-2 mx-12 md:mx-24 my-4 scrollbar-hide md:flex-wrap">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-16 w-36 min-w-24 rounded-xl bg-gray-700/50 animate-pulse" />
+          ))}
+        </div>
+        <hr />
+      </>
+    );
+  }
 
   return (
     <>

@@ -1,7 +1,7 @@
 // app/create/page.js
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 export default function CreateBlogPage() {
@@ -12,7 +12,32 @@ export default function CreateBlogPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loadingStage, setLoadingStage] = useState("");
   const [error, setError] = useState("");
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
+
+  // Fetch user data on component mount
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const response = await fetch("/api/me");
+        if (response.ok) {
+          const userData = await response.json();
+          if (userData && userData.user) {
+            setUser(userData.user);
+            // Auto-fill author with user's name
+            setAuthor(userData.user.name || userData.user.username || "");
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch user:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUser();
+  }, []);
 
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -211,11 +236,14 @@ export default function CreateBlogPage() {
               type="text"
               value={author}
               onChange={(e) => setAuthor(e.target.value)}
-              placeholder="Your name"
-              className="w-full px-3 py-2 bg-neutral-900 border border-neutral-800 rounded text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
+              placeholder={loading ? "Loading..." : "Your name"}
+              className="w-full px-3 py-2 bg-neutral-900 border border-neutral-800 rounded text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
               required
-              disabled={isSubmitting}
+              disabled={isSubmitting || loading}
             />
+            {loading && (
+              <p className="text-gray-500 text-sm mt-1">Loading your profile...</p>
+            )}
           </div>
 
           {/* Blog Title */}

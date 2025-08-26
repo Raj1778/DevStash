@@ -1,12 +1,22 @@
 import React from "react";
 
-const RecentBlogs = () => {
+const RecentBlogs = ({ loading = false }) => {
   const recentBlogs = [
     { title: "Understanding React Hooks", author: "Raj" },
     { title: "Tailwind CSS Tips", author: "Alice" },
     { title: "JavaScript Closures Explained", author: "Bob" },
     { title: "Next.js Layout Patterns", author: "Charlie" },
   ];
+
+  if (loading) {
+    return (
+      <div className="flex overflow-x-auto gap-4 pb-2 scrollbar-hide md:grid md:grid-cols-2 lg:grid-cols-4">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="min-w-[180px] md:min-w-0 h-24 rounded-xl bg-gray-700/50 animate-pulse" />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="flex overflow-x-auto gap-4 pb-2 scrollbar-hide md:grid md:grid-cols-2 lg:grid-cols-4">

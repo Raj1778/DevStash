@@ -1,7 +1,8 @@
 // app/projects/page.js
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { ProjectCardSkeleton } from "@/components/Skeleton";
 
 const ProjectCard = ({ project }) => {
   const getLanguageColor = (lang) => {
@@ -91,6 +92,14 @@ const ProjectCard = ({ project }) => {
           </svg>
           {project.stars}
         </span>
+        {project.forks !== undefined && (
+          <span className="flex items-center">
+            <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M7.707 3.293a1 1 0 010 1.414L5.414 7H11a7 7 0 017 7v2a1 1 0 11-2 0v-2a5 5 0 00-5-5H5.414l2.293 2.293a1 1 0 11-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" />
+            </svg>
+            {project.forks}
+          </span>
+        )}
         <span className="flex items-center">
           <div
             className="w-2 h-2 rounded-full mr-1"
@@ -102,17 +111,25 @@ const ProjectCard = ({ project }) => {
 
       {/* Tech Stack */}
       <div className="flex flex-wrap gap-1 mb-5">
-        {project.techStack.slice(0, 4).map((tech, index) => (
-          <span
-            key={index}
-            className="px-2 py-1 text-xs bg-gray-800/60 text-gray-300 rounded border border-gray-700"
-          >
-            {tech}
-          </span>
-        ))}
-        {project.techStack.length > 4 && (
+        {project.techStack && project.techStack.length > 0 ? (
+          <>
+            {project.techStack.slice(0, 4).map((tech, index) => (
+              <span
+                key={index}
+                className="px-2 py-1 text-xs bg-gray-800/60 text-gray-300 rounded border border-gray-700"
+              >
+                {tech}
+              </span>
+            ))}
+            {project.techStack.length > 4 && (
+              <span className="px-2 py-1 text-xs bg-gray-800/40 text-gray-500 rounded border border-gray-800">
+                +{project.techStack.length - 4}
+              </span>
+            )}
+          </>
+        ) : (
           <span className="px-2 py-1 text-xs bg-gray-800/40 text-gray-500 rounded border border-gray-800">
-            +{project.techStack.length - 4}
+            No topics
           </span>
         )}
       </div>
@@ -184,65 +201,85 @@ const ProjectCard = ({ project }) => {
 
 export default function ProjectsPage() {
   const [filter, setFilter] = useState("all");
+  const [projects, setProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
 
-  // Sample projects data
-  const projects = [
-    {
-      name: "E-Commerce Platform",
-      description:
-        "Full-stack e-commerce solution with payment integration, admin dashboard, and real-time inventory management.",
-      language: "TypeScript",
-      status: "Active",
-      lastUpdated: "2 days ago",
-      stars: 42,
-      size: "2.4 MB",
-      techStack: ["Next.js", "Stripe", "PostgreSQL", "Tailwind", "Redis"],
-      github: "https://github.com/user/ecommerce",
-      demo: "https://ecommerce-demo.com",
-    },
-    {
-      name: "AI Chat Bot",
-      description:
-        "Intelligent chatbot using OpenAI GPT with context awareness and custom training capabilities.",
-      language: "Python",
-      status: "Completed",
-      lastUpdated: "1 week ago",
-      stars: 128,
-      size: "892 KB",
-      techStack: ["FastAPI", "OpenAI", "Docker", "PostgreSQL", "React"],
-      github: "https://github.com/user/ai-chatbot",
-      demo: "https://chatbot-demo.com",
-    },
-    {
-      name: "Task Management",
-      description:
-        "Collaborative project management tool with real-time updates, file sharing, and team analytics.",
-      language: "React",
-      status: "Active",
-      lastUpdated: "5 hours ago",
-      stars: 67,
-      size: "1.8 MB",
-      techStack: ["React", "Node.js", "Socket.io", "MongoDB", "AWS S3"],
-      github: "https://github.com/user/task-manager",
-    },
-    {
-      name: "API Gateway",
-      description:
-        "High-performance API gateway with rate limiting, authentication, and comprehensive logging.",
-      language: "Go",
-      status: "Paused",
-      lastUpdated: "3 weeks ago",
-      stars: 89,
-      size: "15.2 MB",
-      techStack: ["Go", "Redis", "PostgreSQL", "Docker", "Nginx"],
-      github: "https://github.com/user/api-gateway",
-    },
-  ];
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        // Get user data first
+        const userRes = await fetch("/api/me");
+        if (userRes.ok) {
+          const userData = await userRes.json();
+          if (userData && userData.user) {
+            setUser(userData.user);
+            
+            // Fetch GitHub repositories if username is available
+            if (userData.user.githubUsername) {
+              const githubRes = await fetch(`/api/github?username=${userData.user.githubUsername}`);
+              if (githubRes.ok) {
+                const githubData = await githubRes.json();
+                
+                // Convert GitHub repos to project format
+                const processedProjects = githubData.repositories
+                  .filter(repo => !repo.private && !repo.archived) // Only show public, non-archived repos
+                  .map(repo => ({
+                    id: repo.id,
+                    name: repo.name,
+                    description: repo.description || "No description available",
+                    language: repo.language || "Unknown",
+                    status: repo.fork ? "Forked" : "Active",
+                    lastUpdated: formatDate(repo.lastUpdated),
+                    stars: repo.stars,
+                    size: formatSize(repo.size),
+                    techStack: repo.topics || [],
+                    github: repo.url,
+                    demo: repo.homepage || null,
+                    fork: repo.fork,
+                    forks: repo.forks
+                  }));
+                
+                setProjects(processedProjects);
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch projects:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProjects();
+  }, []);
+
+  // Helper functions
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now - date);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 1) return "1 day ago";
+    if (diffDays < 7) return `${diffDays} days ago`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+    if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
+    return `${Math.floor(diffDays / 365)} years ago`;
+  };
+
+  const formatSize = (sizeInKB) => {
+    if (sizeInKB < 1024) return `${sizeInKB} KB`;
+    return `${(sizeInKB / 1024).toFixed(1)} MB`;
+  };
 
   const filteredProjects =
     filter === "all"
       ? projects
-      : projects.filter((p) => p.status.toLowerCase() === filter);
+      : projects.filter((p) => p.status.toLowerCase() === filter || 
+          (filter === "active" && !p.fork) ||
+          (filter === "completed" && p.fork));
 
   return (
     <div className="min-h-screen bg-black px-6 py-12">
@@ -298,7 +335,14 @@ export default function ProjectsPage() {
         </div>
 
         {/* Projects Grid */}
-        {filteredProjects.length === 0 ? (
+        {loading ? (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <ProjectCardSkeleton />
+            <ProjectCardSkeleton />
+            <ProjectCardSkeleton />
+            <ProjectCardSkeleton />
+          </div>
+        ) : filteredProjects.length === 0 ? (
           <div className="text-center py-20">
             <div className="max-w-md mx-auto p-8 border border-gray-700 rounded-xl bg-gray-900/20">
               <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-gray-800 flex items-center justify-center">
@@ -316,19 +360,26 @@ export default function ProjectsPage() {
                   />
                 </svg>
               </div>
-              <p className="text-gray-400 text-lg mb-6">No projects found</p>
-              <Link
-                href="/projects/new"
-                className="inline-flex items-center px-6 py-3 bg-white text-black rounded-lg hover:bg-gray-200 transition-colors duration-200 font-medium"
-              >
-                Start building
-              </Link>
+              <p className="text-gray-400 text-lg mb-6">
+                {user && user.githubUsername 
+                  ? "No public repositories found" 
+                  : "Connect your GitHub account to see your projects"
+                }
+              </p>
+              {!user && (
+                <Link
+                  href="/login"
+                  className="inline-flex items-center px-6 py-3 bg-white text-black rounded-lg hover:bg-gray-200 transition-colors duration-200 font-medium"
+                >
+                  Connect GitHub
+                </Link>
+              )}
             </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {filteredProjects.map((project, index) => (
-              <ProjectCard key={index} project={project} />
+              <ProjectCard key={project.id || index} project={project} />
             ))}
           </div>
         )}
@@ -337,7 +388,7 @@ export default function ProjectsPage() {
         <div className="mt-16 text-center">
           <p className="text-gray-600 text-sm">
             {projects.length} {projects.length === 1 ? "project" : "projects"} •
-            {projects.filter((p) => p.status === "Active").length} active •
+            {projects.filter((p) => !p.fork).length} original •
             {projects.reduce((acc, p) => acc + p.stars, 0)} total stars
           </p>
         </div>
