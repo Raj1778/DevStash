@@ -2,6 +2,7 @@
 import Link from "next/link";
 import Recent from "@/components/Recent";
 import RecentBlogs from "@/components/RecentBlogs";
+import TrendingNews from "@/components/TrendingNews";
 import { Suspense, useState, useEffect } from "react";
 import { StatCardSkeleton } from "@/components/Skeleton";
 import { ClientStats } from "@/components/ClientStats";
@@ -242,6 +243,48 @@ export default function Home() {
             ))}
           </div>}>
             <RecentBlogs />
+          </Suspense>
+        </div>
+
+        {/* Trending News */}
+        <div className="mb-8 md:mb-8 pb-6 md:pb-0">
+          <div className="flex items-center justify-between mb-5 md:mb-4">
+            <h2 className="text-xl md:text-xl font-light text-white">
+              Trending Tech News
+            </h2>
+            <div className="flex items-center space-x-3">
+              <Link 
+                href="/news"
+                prefetch={true}
+                className="text-zinc-400 hover:text-white text-sm md:text-sm transition-colors px-3 py-2 md:px-0 md:py-0 rounded-lg md:rounded-none hover:bg-zinc-808/50 md:hover:bg-transparent"
+              >
+                View all news
+              </Link>
+            </div>
+          </div>
+          <Suspense fallback={<div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="p-4 bg-gradient-to-br from-zinc-900/60 to-zinc-800/40 border border-zinc-800/50 rounded-xl">
+                <div className="flex items-start space-x-3">
+                  <div className="flex-shrink-0 w-16 h-16 rounded-lg bg-zinc-800 animate-pulse"></div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center space-x-2 mb-1">
+                      <div className="h-3 bg-zinc-800 rounded animate-pulse w-16"></div>
+                      <div className="h-3 bg-zinc-800 rounded animate-pulse w-4"></div>
+                      <div className="h-3 bg-zinc-800 rounded animate-pulse w-12"></div>
+                    </div>
+                    <div className="h-4 bg-zinc-800 rounded animate-pulse mb-2 w-full"></div>
+                    <div className="h-3 bg-zinc-800 rounded animate-pulse w-3/4"></div>
+                    <div className="flex items-center justify-between mt-2">
+                      <div className="h-3 bg-zinc-800 rounded animate-pulse w-20"></div>
+                      <div className="h-3 bg-zinc-800 rounded animate-pulse w-16"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>}>
+            <TrendingNews />
           </Suspense>
         </div>
       </div>
