@@ -110,78 +110,46 @@ export default function TrendingNews() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const fetchDashboardNews = async () => {
-      try {
-        setLoading(true);
-
-        // Priority request for dashboard (first 3 articles)
-        const response = await fetch("/api/news?limit=3&priority=true", {
-          cache: "no-store",
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          setNews(data.articles || []);
-
-          // Background fetch for full news (after 1s delay)
-          setTimeout(() => {
-            fetchFullNewsInBackground();
-          }, 1000);
-        } else {
-          const errorData = await response.json();
-          setError(errorData.error || "Failed to fetch news");
-          console.error("❌ Failed to fetch dashboard news");
-        }
-      } catch (error) {
-        console.error("⚠️ Error fetching dashboard news:", error);
-        setError("Failed to fetch news");
-      } finally {
-        setLoading(false);
+ useEffect(() => {
+  const fetchDashboardNews = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch("/api/news?limit=3&priority=true");
+      if (response.ok) {
+        const data = await response.json();
+        setNews(data.articles || []);
+      } else {
+        setError("Failed to fetch trending news");
       }
-    };
+    } catch (err) {
+      console.error("⚠️ News fetch error:", err);
+      setError("Failed to fetch trending news");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const fetchFullNewsInBackground = async () => {
-      try {
-        console.log("🔄 Starting background fetch for full news...");
-        const response = await fetch("/api/news?limit=10", {
-          cache: "no-store",
-        });
+  const fetchFullNewsInBackground = async () => {
+    try {
+      console.log("🔄 Starting background fetch for full news...");
+      const response = await fetch("/api/news?limit=10", { cache: "no-store" });
 
-        if (response.ok) {
-          const data = await response.json();
-          console.log(
-            `✅ Background fetch complete: ${data.articles?.length} articles cached`
-          );
-          // Cached for /news page → no state update needed here
-        }
-      } catch (error) {
-        console.error("⚠️ Background news fetch failed:", error);
+      if (response.ok) {
+        const data = await response.json();
+        console.log(
+          `✅ Background fetch complete: ${data.articles?.length} articles cached`
+        );
+        // keep cached for /news page → no state update here
       }
-    };
+    } catch (error) {
+      console.error("⚠️ Background news fetch failed:", error);
+    }
+  };
 
-    fetchDashboardNews();
-  }, []);
-
-  // Error state
-  if (error) {
-    return (
-      <div className="p-4 bg-red-900/20 border border-red-800/50 rounded-xl">
-        <p className="text-red-400 text-sm">
-          Unable to load trending news. Please try again later.
-        </p>
-      </div>
-    );
-  }
-
-  // No news state
-  if (!loading && !error && news.length === 0) {
-    return (
-      <div className="p-4 bg-zinc-900/40 border border-zinc-800 rounded-xl text-center text-zinc-400 text-sm">
-        No trending news available right now.
-      </div>
-    );
-  }
+  // Run both
+  fetchDashboardNews();
+  fetchFullNewsInBackground();
+}, []);
 
   return (
     <div className="mt-3 mb-20 space-y-3">
