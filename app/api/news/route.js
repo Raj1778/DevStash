@@ -1,231 +1,410 @@
-// app/api/news/route.js
+// app/api/news/route.js - Multiple API Sources
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
-// Simple in-memory cache for news
 const newsCache = {
   data: null,
   timestamp: 0,
-  mode: null,
+  source: null,
 };
-const CACHE_DURATION = 15 * 60 * 1000; // 15 minutes
+const CACHE_DURATION = 60 * 60 * 1000; // 1 hour cache
 
 function buildFallback() {
   const nowIso = new Date().toISOString();
-  const placeholder = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256"><rect width="100%" height="100%" fill="%2318181b"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%239ca3af" font-size="20" font-family="Inter, Arial">Curated News</text></svg>';
+  const placeholder = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256"><rect width="100%" height="100%" fill="%2318181b"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%239ca3af" font-size="16" font-family="Inter, Arial">Tech News</text></svg>';
+  
   const curated = [
     {
-      title: 'AI breakthroughs shaping software in 2025',
-      description: 'From agentic workflows to multimodal reasoning, AI is changing dev work.',
+      title: 'AI Development Tools Transform Software Engineering in 2025',
+      description: 'Latest AI coding assistants and automated testing tools are reshaping how developers work.',
       url: 'https://openai.com/research',
       urlToImage: placeholder,
       publishedAt: nowIso,
-      source: { name: 'OpenAI' },
+      source: { name: 'Tech Today' },
       query: 'Curated'
     },
     {
-      title: 'Next.js patterns: Server Actions, RSC, and streaming UI',
-      description: 'Practical patterns to build modern apps with performance and DX in mind.',
+      title: 'React 19 and Next.js 15: Major Performance Improvements',
+      description: 'New concurrent features and server components boost app performance significantly.',
       url: 'https://nextjs.org/blog',
       urlToImage: placeholder,
       publishedAt: nowIso,
-      source: { name: 'Vercel' },
+      source: { name: 'React News' },
       query: 'Curated'
     },
     {
-      title: 'TypeScript 5.x: what you should adopt now',
-      description: 'Smarter type narrowing, decorators, and tooling improvements for stability.',
+      title: 'TypeScript 5.4: Enhanced Type Safety and Developer Experience',
+      description: 'Latest TypeScript release includes better inference and new utility types.',
       url: 'https://devblogs.microsoft.com/typescript/',
       urlToImage: placeholder,
       publishedAt: nowIso,
-      source: { name: 'TypeScript Team' },
-      query: 'Curated'
-    },
-    {
-      title: 'React compiler progress and implications for apps',
-      description: 'Automatic memoization is coming—what it means for components today.',
-      url: 'https://react.dev/blog',
-      urlToImage: placeholder,
-      publishedAt: nowIso,
-      source: { name: 'React Team' },
-      query: 'Curated'
-    },
-    {
-      title: 'Rust in production: safety and performance wins',
-      description: 'Why teams are choosing Rust for critical services and tooling.',
-      url: 'https://blog.rust-lang.org/',
-      urlToImage: placeholder,
-      publishedAt: nowIso,
-      source: { name: 'Rust Lang' },
-      query: 'Curated'
-    },
-    {
-      title: 'Bun and Deno: the evolving JS runtime landscape',
-      description: 'A look at speed, APIs, and compatibility for 2025.',
-      url: 'https://bun.sh/blog',
-      urlToImage: placeholder,
-      publishedAt: nowIso,
-      source: { name: 'Bun' },
-      query: 'Curated'
-    },
-    {
-      title: 'Kubernetes 1.31: what operators should know',
-      description: 'Upgrades, deprecations, and features that matter for clusters.',
-      url: 'https://kubernetes.io/blog/',
-      urlToImage: placeholder,
-      publishedAt: nowIso,
-      source: { name: 'Kubernetes' },
-      query: 'Curated'
-    },
-    {
-      title: 'Modern CSS: container queries and new viewport units',
-      description: 'Design responsive layouts with less JS and more predictability.',
-      url: 'https://web.dev/',
-      urlToImage: placeholder,
-      publishedAt: nowIso,
-      source: { name: 'web.dev' },
-      query: 'Curated'
-    },
-    {
-      title: 'PostgreSQL performance tips for scalable apps',
-      description: 'Indexes, query plans, and connection pooling in practice.',
-      url: 'https://www.postgresql.org/docs/',
-      urlToImage: placeholder,
-      publishedAt: nowIso,
-      source: { name: 'PostgreSQL' },
-      query: 'Curated'
-    },
-    {
-      title: 'Secure by default: practical appsec for web apps',
-      description: 'OWASP updates, threat modeling, and supply-chain realities.',
-      url: 'https://owasp.org',
-      urlToImage: placeholder,
-      publishedAt: nowIso,
-      source: { name: 'OWASP' },
+      source: { name: 'TypeScript' },
       query: 'Curated'
     }
   ];
 
-  return {
-    articles: curated,
-    totalResults: curated.length
-  };
+  return { articles: curated, totalResults: curated.length };
+}
+
+// Alternative API 1: Guardian API (Free, 12,000 requests/day)
+async function fetchFromGuardian(limit = 10) {
+  const apiKey = process.env.GUARDIAN_API_KEY;
+  if (!apiKey) return null;
+
+  try {
+    // Multiple search queries for diverse content
+    const searchQueries = [
+      { query: 'artificial intelligence', tag: 'AI' },
+      { query: 'machine learning', tag: 'ML' },
+      { query: 'React OR Next.js', tag: 'React' },
+      { query: 'TypeScript OR JavaScript', tag: 'JavaScript' },
+      { query: 'Python programming', tag: 'Python' },
+      { query: 'cybersecurity', tag: 'Security' },
+      { query: 'cloud computing', tag: 'Cloud' },
+      { query: 'blockchain OR cryptocurrency', tag: 'Blockchain' },
+      { query: 'startup OR funding', tag: 'Startup' },
+      { query: 'web development', tag: 'Web Dev' }
+    ];
+
+    const allArticles = [];
+    const seenUrls = new Set();
+    const articlesPerQuery = Math.max(1, Math.ceil(limit / 6)); // Distribute across queries
+
+    // Get articles from multiple queries for diversity
+    for (const { query, tag } of searchQueries) {
+      if (allArticles.length >= limit) break;
+      
+      try {
+        const response = await fetch(
+          `https://content.guardianapis.com/search?q=${encodeURIComponent(query)}&section=technology|business|science&page-size=${articlesPerQuery + 2}&show-fields=thumbnail,trailText&api-key=${apiKey}`,
+          { next: { revalidate: 3600 } }
+        );
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.response?.results) {
+            // Take articles from this query
+            let addedFromQuery = 0;
+            for (const article of data.response.results) {
+              if (!seenUrls.has(article.webUrl) && 
+                  allArticles.length < limit && 
+                  addedFromQuery < articlesPerQuery) {
+                
+                seenUrls.add(article.webUrl);
+                allArticles.push({
+                  title: article.webTitle,
+                  description: article.fields?.trailText || 'Read more on The Guardian',
+                  url: article.webUrl,
+                  urlToImage: article.fields?.thumbnail || null,
+                  publishedAt: article.webPublicationDate,
+                  source: { name: 'The Guardian' },
+                  query: tag
+                });
+                addedFromQuery++;
+              }
+            }
+          }
+        }
+        
+        // Small delay between requests to be respectful
+        await new Promise(resolve => setTimeout(resolve, 200));
+        
+      } catch (error) {
+        console.error(`Guardian query failed for ${query}:`, error);
+      }
+    }
+
+    // If we didn't get enough diverse articles, fill with general tech section
+    if (allArticles.length < Math.min(limit, 5)) {
+      try {
+        const needed = limit - allArticles.length;
+        const response = await fetch(
+          `https://content.guardianapis.com/search?section=technology&page-size=${needed + 3}&show-fields=thumbnail,trailText&api-key=${apiKey}`,
+          { next: { revalidate: 3600 } }
+        );
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.response?.results) {
+            for (const article of data.response.results) {
+              if (!seenUrls.has(article.webUrl) && allArticles.length < limit) {
+                seenUrls.add(article.webUrl);
+                allArticles.push({
+                  title: article.webTitle,
+                  description: article.fields?.trailText || 'Read more on The Guardian',
+                  url: article.webUrl,
+                  urlToImage: article.fields?.thumbnail || null,
+                  publishedAt: article.webPublicationDate,
+                  source: { name: 'The Guardian' },
+                  query: 'Technology'
+                });
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Guardian fallback failed:', error);
+      }
+    }
+
+    return allArticles.length > 0 ? { 
+      articles: allArticles, 
+      totalResults: allArticles.length 
+    } : null;
+
+  } catch (error) {
+    console.error('Guardian API failed:', error);
+    return null;
+  }
+}
+
+// Alternative API 2: RSS Feeds (Always free)
+async function fetchFromRSS() {
+  try {
+    const feeds = [
+      { url: 'https://feeds.feedburner.com/oreilly/radar', tag: 'Tech' },
+      { url: 'https://www.wired.com/feed/category/science/rss', tag: 'Science' },
+      { url: 'https://techcrunch.com/category/artificial-intelligence/feed/', tag: 'AI' },
+      { url: 'https://css-tricks.com/feed/', tag: 'Web Dev' }
+    ];
+
+    const articles = [];
+    const seenUrls = new Set();
+
+    for (const { url: feedUrl, tag } of feeds) {
+      if (articles.length >= 3) break;
+      
+      try {
+        const response = await fetch(
+          `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}&count=2`,
+          { next: { revalidate: 3600 } }
+        );
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.items) {
+            for (const item of data.items) {
+              if (!seenUrls.has(item.link) && articles.length < 3) {
+                seenUrls.add(item.link);
+                articles.push({
+                  title: item.title,
+                  description: item.description?.replace(/<[^>]*>/g, '').substring(0, 150) + '...' || '',
+                  url: item.link,
+                  urlToImage: item.thumbnail || item.enclosure?.link || null,
+                  publishedAt: item.pubDate,
+                  source: { name: data.feed?.title?.split(' - ')[0] || 'Tech RSS' },
+                  query: tag // Use specific tag for each feed
+                });
+                break; // One article per feed
+              }
+            }
+          }
+        }
+        
+        // Small delay between requests
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+      } catch (e) {
+        console.error('RSS feed failed:', feedUrl, e);
+      }
+    }
+
+    return articles.length > 0 ? { 
+      articles, 
+      totalResults: articles.length 
+    } : null;
+  } catch (error) {
+    console.error('RSS fetch failed:', error);
+    return null;
+  }
+}
+
+// Alternative API 3: HackerNews API (Free, unlimited)
+async function fetchFromHackerNews() {
+  try {
+    // Get top stories
+    const topStoriesResponse = await fetch('https://hacker-news.firebaseio.com/v0/topstories.json');
+    if (!topStoriesResponse.ok) return null;
+    
+    const topStories = await topStoriesResponse.json();
+    
+    // Keywords with their tags
+    const techCategories = [
+      { keywords: ['ai', 'artificial intelligence', 'machine learning', 'gpt', 'openai'], tag: 'AI' },
+      { keywords: ['react', 'vue', 'angular', 'frontend', 'javascript'], tag: 'Frontend' },
+      { keywords: ['python', 'django', 'flask', 'backend'], tag: 'Python' },
+      { keywords: ['rust', 'go', 'golang', 'systems'], tag: 'Systems' },
+      { keywords: ['startup', 'funding', 'ycombinator', 'venture'], tag: 'Startup' },
+      { keywords: ['security', 'privacy', 'crypto', 'blockchain'], tag: 'Security' }
+    ];
+    
+    const articles = [];
+    const seenUrls = new Set();
+    
+    // Get first 30 stories and categorize them
+    for (let i = 0; i < Math.min(30, topStories.length) && articles.length < 3; i++) {
+      try {
+        const storyResponse = await fetch(`https://hacker-news.firebaseio.com/v0/item/${topStories[i]}.json`);
+        if (!storyResponse.ok) continue;
+        
+        const story = await storyResponse.json();
+        
+        if (story.title && story.url && !seenUrls.has(story.url)) {
+          const titleLower = story.title.toLowerCase();
+          
+          // Find the best matching category
+          let bestTag = 'Tech';
+          for (const category of techCategories) {
+            if (category.keywords.some(keyword => titleLower.includes(keyword))) {
+              bestTag = category.tag;
+              break;
+            }
+          }
+          
+          seenUrls.add(story.url);
+          articles.push({
+            title: story.title,
+            description: `Popular on Hacker News with ${story.descendants || 0} comments. Score: ${story.score || 0}`,
+            url: story.url,
+            urlToImage: null,
+            publishedAt: new Date(story.time * 1000).toISOString(),
+            source: { name: 'Hacker News' },
+            query: bestTag
+          });
+        }
+      } catch (e) {
+        console.error('HN story fetch failed:', topStories[i], e);
+      }
+    }
+
+    return articles.length > 0 ? { 
+      articles, 
+      totalResults: articles.length 
+    } : null;
+  } catch (error) {
+    console.error('HackerNews fetch failed:', error);
+    return null;
+  }
 }
 
 export async function GET(request) {
   try {
-    const apiKey = process.env.NEWS_API_KEY;
-    if (!apiKey) {
-      const fallback = buildFallback();
-      newsCache.data = fallback;
-      newsCache.timestamp = Date.now();
-      newsCache.mode = 'fallback';
-      return NextResponse.json(fallback);
-    }
-    
-    // Mode toggle: default to 'everything' (broad). Allow ?mode=... to override.
     const url = new URL(request.url);
-    const queryMode = (url.searchParams.get('mode') || '').toLowerCase();
-    const envMode = (process.env.NEWS_MODE || 'everything').toLowerCase();
-    const mode = (queryMode === 'everything' || queryMode === 'top') ? queryMode : envMode;
-
-    // Check cache first with mode-aware key
-    if (newsCache.data && newsCache.mode === mode && (Date.now() - newsCache.timestamp) < CACHE_DURATION) {
-      return NextResponse.json(newsCache.data);
+    const limit = parseInt(url.searchParams.get('limit')) || 10; // Default to 10, allow override
+    const priority = url.searchParams.get('priority') === 'true'; // For dashboard priority loading
+    
+    // Check cache first
+    const cacheKey = `news_${limit}`;
+    if (newsCache.data && 
+        newsCache.timestamp && 
+        (Date.now() - newsCache.timestamp) < CACHE_DURATION &&
+        newsCache.data.articles.length >= Math.min(limit, 3)) {
+      
+      // Return cached data with requested limit
+      const cachedResult = {
+        articles: newsCache.data.articles.slice(0, limit),
+        totalResults: newsCache.data.totalResults,
+        cached: true
+      };
+      console.log(`Serving ${cachedResult.articles.length} cached articles`);
+      return NextResponse.json(cachedResult);
     }
 
-    if (mode === 'everything') {
-      const queries = [
-  'artificial intelligence',
-  'machine learning',
-  'React',
-  'Next.js',
-  'Node.js',
-  'TypeScript',
-  'Python',
-  'Rust',
-  'cloud computing',
-  'cybersecurity'
-];
+    console.log(`Fetching ${limit} fresh articles from alternative sources...`);
 
+    // Try alternative sources in order of preference
+    const sources = [
+      { name: 'Guardian', fetch: fetchFromGuardian },
+      { name: 'RSS', fetch: fetchFromRSS },
+      { name: 'HackerNews', fetch: fetchFromHackerNews }
+    ];
 
-      const allArticles = [];
-      const seen = new Set();
-      for (const q of queries) {
-        try {
-          const response = await fetch(`https://newsapi.org/v2/everything?q=${encodeURIComponent(q)}&sortBy=publishedAt&language=en&pageSize=5&apiKey=${apiKey}`);
-          const status = response.status;
-          const text = await response.text();
-          console.log('NewsAPI everything', q, status);
-          let data; try { data = JSON.parse(text); } catch { data = {}; }
-          (data.articles || []).forEach(a => {
-            if (a && a.url && a.title && !seen.has(a.url)) {
-              seen.add(a.url);
-              allArticles.push({ ...a, query: q });
-            }
-          });
-        } catch (e) {
-          console.error('Everything fetch failed for', q, e);
+    let allArticles = [];
+    
+    for (const source of sources) {
+      try {
+        console.log(`Trying ${source.name} API...`);
+        const result = await source.fetch(limit); // Pass limit to each fetcher
+        
+        if (result && result.articles && result.articles.length > 0) {
+          console.log(`✅ ${source.name}: ${result.articles.length} articles`);
+          allArticles = [...allArticles, ...result.articles];
+          
+          // If we have enough for priority request (dashboard), return immediately
+          if (priority && allArticles.length >= 3) {
+            const priorityResult = {
+              articles: allArticles.slice(0, 3),
+              totalResults: allArticles.length,
+              source: source.name,
+              priority: true
+            };
+            
+            // Cache what we have so far
+            newsCache.data = { articles: allArticles, totalResults: allArticles.length };
+            newsCache.timestamp = Date.now();
+            newsCache.source = source.name;
+            
+            console.log(`🚀 Priority: Returning first 3 articles from ${source.name}`);
+            return NextResponse.json(priorityResult);
+          }
+          
+          // If we have enough articles, break
+          if (allArticles.length >= limit) break;
+        } else {
+          console.log(`❌ ${source.name} returned no articles`);
         }
+      } catch (error) {
+        console.error(`❌ ${source.name} failed:`, error.message);
       }
+    }
 
-      const sorted = allArticles
-        .sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt))
-        .slice(0, 10);
+    // Remove duplicates based on URL
+    const uniqueArticles = [];
+    const seenUrls = new Set();
+    
+    for (const article of allArticles) {
+      if (!seenUrls.has(article.url)) {
+        seenUrls.add(article.url);
+        uniqueArticles.push(article);
+        if (uniqueArticles.length >= limit) break;
+      }
+    }
 
-      const result = sorted.length > 0 ? { articles: sorted, totalResults: sorted.length } : buildFallback();
+    if (uniqueArticles.length > 0) {
+      const result = {
+        articles: uniqueArticles,
+        totalResults: uniqueArticles.length,
+        mixed: true // Indicates articles from multiple sources
+      };
+
+      // Cache the full result
       newsCache.data = result;
       newsCache.timestamp = Date.now();
-      newsCache.mode = mode;
+      newsCache.source = 'mixed';
+      
+      console.log(`✅ Success: Returning ${result.articles.length} unique articles`);
       return NextResponse.json(result);
-    } else {
-      // Default: top-headlines for technology (lightweight, trending)
-      try {
-        const url = `https://newsapi.org/v2/top-headlines?category=technology&language=en&apiKey=${apiKey}`;
-        const response = await fetch(url);
-        const status = response.status;
-        const text = await response.text();
-        console.log('NewsAPI top-headlines', status, text.slice(0, 200));
-
-        let data;
-        try {
-          data = JSON.parse(text);
-        } catch {
-          data = {};
-        }
-
-        const incoming = Array.isArray(data?.articles) ? data.articles : [];
-        const articles = incoming
-          .filter(a => a && a.title && a.url)
-          .map(a => ({ ...a, query: 'Technology' }))
-          .slice(0, 10);
-
-        const result = articles.length > 0 ? {
-          articles,
-          totalResults: articles.length
-        } : buildFallback();
-
-        newsCache.data = result;
-        newsCache.timestamp = Date.now();
-        newsCache.mode = mode;
-        return NextResponse.json(result);
-      } catch (e) {
-        console.error('NewsAPI fetch failed:', e);
-        const fallback = buildFallback();
-        newsCache.data = fallback;
-        newsCache.timestamp = Date.now();
-        newsCache.mode = 'fallback';
-        return NextResponse.json(fallback);
-      }
     }
 
+    // All sources failed, use fallback
+    console.log('All sources failed, using curated fallback');
+    const fallback = buildFallback();
+    newsCache.data = fallback;
+    newsCache.timestamp = Date.now();
+    newsCache.source = 'fallback';
+    
+    return NextResponse.json({
+      ...fallback,
+      articles: fallback.articles.slice(0, limit)
+    });
 
   } catch (error) {
-    console.error('Error fetching news:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch news' },
-      { status: 500 }
-    );
+    console.error('Error in news route:', error);
+    const fallback = buildFallback();
+    return NextResponse.json({
+      ...fallback,
+      articles: fallback.articles.slice(0, Math.min(limit, 3))
+    });
   }
 }

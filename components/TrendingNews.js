@@ -111,26 +111,59 @@ export default function TrendingNews() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    defer(async () => {
+    const fetchDashboardNews = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/news', { cache: 'no-store' });
+
+        // Priority request for dashboard (first 3 articles)
+        const response = await fetch("/api/news?limit=3&priority=true", {
+          cache: "no-store",
+        });
+
         if (response.ok) {
           const data = await response.json();
           setNews(data.articles || []);
+
+          // Background fetch for full news (after 1s delay)
+          setTimeout(() => {
+            fetchFullNewsInBackground();
+          }, 1000);
         } else {
           const errorData = await response.json();
-          setError(errorData.error || 'Failed to fetch news');
-          showError('Failed to load trending news');
+          setError(errorData.error || "Failed to fetch news");
+          console.error("❌ Failed to fetch dashboard news");
         }
       } catch (error) {
-        setError('Failed to fetch news');
+        console.error("⚠️ Error fetching dashboard news:", error);
+        setError("Failed to fetch news");
       } finally {
         setLoading(false);
       }
-    }, { timeout: 1200 });
+    };
+
+    const fetchFullNewsInBackground = async () => {
+      try {
+        console.log("🔄 Starting background fetch for full news...");
+        const response = await fetch("/api/news?limit=10", {
+          cache: "no-store",
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log(
+            `✅ Background fetch complete: ${data.articles?.length} articles cached`
+          );
+          // Cached for /news page → no state update needed here
+        }
+      } catch (error) {
+        console.error("⚠️ Background news fetch failed:", error);
+      }
+    };
+
+    fetchDashboardNews();
   }, []);
 
+  // Error state
   if (error) {
     return (
       <div className="p-4 bg-red-900/20 border border-red-800/50 rounded-xl">
@@ -141,6 +174,7 @@ export default function TrendingNews() {
     );
   }
 
+  // No news state
   if (!loading && !error && news.length === 0) {
     return (
       <div className="p-4 bg-zinc-900/40 border border-zinc-800 rounded-xl text-center text-zinc-400 text-sm">
@@ -152,7 +186,6 @@ export default function TrendingNews() {
   return (
     <div className="mt-3 mb-20 space-y-3">
       {loading ? (
-        // Show 3 skeleton cards while loadings
         <>
           <NewsCardSkeleton />
           <NewsCardSkeleton />
@@ -163,7 +196,7 @@ export default function TrendingNews() {
           <NewsCard key={`${article.url}-${index}`} article={article} />
         ))
       )}
-      
+
       {!loading && news.length > 0 && (
         <div className="pt-2">
           <Link
