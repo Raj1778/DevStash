@@ -56,6 +56,93 @@ function validateUrl(url) {
   }
 }
 
+function extractImage($, url) {
+  // Try multiple selectors for finding the main article image
+  const imageSelectors = [
+    'meta[property="og:image"]',
+    'meta[property="og:image:secure_url"]', 
+    'meta[name="twitter:image"]',
+    'meta[name="twitter:image:src"]',
+    'article img[src]',
+    '.article-image img[src]',
+    '.featured-image img[src]',
+    '.post-image img[src]',
+    '.hero-image img[src]',
+    '.content img[src]',
+    'main img[src]',
+    'img[src]'
+  ];
+
+  let imageUrl = null;
+  
+  // Try meta tags first (most reliable)
+  for (const selector of imageSelectors) {
+    if (selector.includes('meta')) {
+      const content = $(selector).attr('content');
+      if (content && content.length > 0) {
+        imageUrl = content;
+        break;
+      }
+    } else {
+      // For img tags, find the largest/most relevant one
+      const images = $(selector);
+      let bestImage = null;
+      let bestScore = 0;
+      
+      images.each((i, img) => {
+        const $img = $(img);
+        const src = $img.attr('src');
+        const alt = $img.attr('alt') || '';
+        const width = parseInt($img.attr('width')) || 0;
+        const height = parseInt($img.attr('height')) || 0;
+        
+        if (!src) return;
+        
+        // Skip obvious non-article images
+        if (src.includes('logo') || src.includes('avatar') || 
+            src.includes('icon') || alt.toLowerCase().includes('logo') ||
+            width < 200 || height < 150) {
+          return;
+        }
+        
+        // Score based on size and relevance
+        const score = width + height + (alt.length * 2);
+        if (score > bestScore) {
+          bestScore = score;
+          bestImage = src;
+        }
+      });
+      
+      if (bestImage) {
+        imageUrl = bestImage;
+        break;
+      }
+    }
+  }
+  
+  // Convert relative URLs to absolute
+  if (imageUrl) {
+    try {
+      if (imageUrl.startsWith('//')) {
+        imageUrl = 'https:' + imageUrl;
+      } else if (imageUrl.startsWith('/')) {
+        const urlObj = new URL(url);
+        imageUrl = `${urlObj.protocol}//${urlObj.host}${imageUrl}`;
+      } else if (!imageUrl.startsWith('http')) {
+        imageUrl = new URL(imageUrl, url).href;
+      }
+      
+      // Validate the image URL
+      new URL(imageUrl);
+      return imageUrl;
+    } catch {
+      return null;
+    }
+  }
+  
+  return null;
+}
+
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -80,7 +167,11 @@ export async function GET(request) {
     const cacheKey = url;
     const cached = articleCache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-      return NextResponse.json(cached.data);
+      return NextResponse.json(cached.data, {
+        headers: {
+          'x-cache-status': 'HIT'
+        }
+      });
     }
 
     // Clean cache if needed
@@ -132,6 +223,11 @@ export async function GET(request) {
         author: '',
         publishedAt: '',
         content: '',
+        description: '',
+        urlToImage: null, // Add this field
+        source: {
+          name: ''
+        },
         sourceLinks: [],
         wordCount: 0,
         readingTime: 0
@@ -143,6 +239,21 @@ export async function GET(request) {
                          $('h1').first().text().trim() ||
                          $('title').text().trim().split(' - ')[0] || // Remove site name
                          '';
+
+      // Extract description
+      articleData.description = $('meta[property="og:description"]').attr('content') ||
+                               $('meta[name="twitter:description"]').attr('content') ||
+                               $('meta[name="description"]').attr('content') ||
+                               '';
+
+      // Extract image - THIS IS THE KEY ADDITION
+      articleData.urlToImage = extractImage($, url);
+
+      // Extract source name
+      const hostname = new URL(url).hostname.replace('www.', '');
+      articleData.source.name = $('meta[property="og:site_name"]').attr('content') ||
+                               $('meta[name="application-name"]').attr('content') ||
+                               hostname.split('.')[0].charAt(0).toUpperCase() + hostname.split('.')[0].slice(1);
 
       // Extract author with more selectors
       articleData.author = $('meta[name="author"]').attr('content') ||
@@ -287,7 +398,11 @@ export async function GET(request) {
         });
       }
 
-      return NextResponse.json(articleData);
+      return NextResponse.json(articleData, {
+        headers: {
+          'x-cache-status': 'MISS'
+        }
+      });
 
     } catch (error) {
       clearTimeout(timeoutId);
