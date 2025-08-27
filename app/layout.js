@@ -1,50 +1,38 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { FloatingDockDemo } from "@/components/dock";
-import MobileSidebar from "@/components/MobileSidebar";
 import Navbar from "@/components/Navbar";
+import MobileSidebar from "@/components/MobileSidebar";
 import { PerformanceMonitor } from "@/components/PerformanceMonitor";
+import { Toaster } from "react-hot-toast";
 
-// Optimize font loading with display swap and preload
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const geist = Geist({
   subsets: ["latin"],
-  display: 'swap',
+  display: "swap",
   preload: true,
 });
 
 const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
   subsets: ["latin"],
-  display: 'swap',
+  display: "swap",
   preload: true,
 });
 
 export const metadata = {
   title: "DevStash - Developer Portfolio & Productivity Hub",
-  description: "A modern developer portfolio and productivity hub for tracking GitHub commits, LeetCode progress, and sharing technical blogs.",
-  keywords: ["developer", "portfolio", "github", "leetcode", "blog", "productivity"],
+  description: "A comprehensive developer portfolio and productivity platform featuring GitHub integration, LeetCode tracking, blog management, and project showcase.",
+  keywords: "developer, portfolio, github, leetcode, blog, projects, productivity, coding, programming",
   authors: [{ name: "DevStash Team" }],
-  creator: "DevStash",
-  publisher: "DevStash",
-  formatDetection: {
-    email: false,
-    address: false,
-    telephone: false,
-  },
-  metadataBase: new URL('https://devstash.vercel.app'),
   openGraph: {
     title: "DevStash - Developer Portfolio & Productivity Hub",
-    description: "Track your GitHub commits, LeetCode progress, and share technical insights",
-    url: 'https://devstash.vercel.app',
-    siteName: 'DevStash',
-    locale: 'en_US',
-    type: 'website',
+    description: "A comprehensive developer portfolio and productivity platform featuring GitHub integration, LeetCode tracking, blog management, and project showcase.",
+    type: "website",
+    locale: "en_US",
   },
   twitter: {
-    card: 'summary_large_image',
+    card: "summary_large_image",
     title: "DevStash - Developer Portfolio & Productivity Hub",
-    description: "Track your GitHub commits, LeetCode progress, and share technical insights",
+    description: "A comprehensive developer portfolio and productivity platform featuring GitHub integration, LeetCode tracking, blog management, and project showcase.",
   },
   robots: {
     index: true,
@@ -52,34 +40,38 @@ export const metadata = {
     googleBot: {
       index: true,
       follow: true,
-      'max-video-preview': -1,
-      'max-image-preview': 'large',
-      'max-snippet': -1,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
     },
   },
   verification: {
-    google: 'your-google-verification-code',
+    google: "your-google-verification-code",
   },
 };
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
+    <html lang="en">
       <head>
-        {/* Preload critical resources */}
+        {/* Preconnect to external domains for faster loading */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://api.github.com" />
+        <link rel="preconnect" href="https://leetcode.com" />
         
-        {/* DNS prefetch for external APIs */}
-        <link rel="dns-prefetch" href="//api.github.com" />
-        <link rel="dns-prefetch" href="//leetcode.com" />
+        {/* DNS prefetch for additional performance */}
+        <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+        <link rel="dns-prefetch" href="https://api.github.com" />
+        <link rel="dns-prefetch" href="https://leetcode.com" />
         
-        {/* Preload critical pages */}
+        {/* Prefetch critical pages */}
+        <link rel="prefetch" href="/blogPage" />
         <link rel="prefetch" href="/projects" />
-        <link rel="prefetch" href="/my-account" />
+        <link rel="prefetch" href="/Notes" />
         <link rel="prefetch" href="/createBlog" />
       </head>
-      <body className="antialiased bg-[#0a0a0a]">
+      <body className={`${geist.variable} ${geistMono.variable} antialiased`}>
         <PerformanceMonitor />
         <Navbar />
         <MobileSidebar />
@@ -89,6 +81,29 @@ export default function RootLayout({ children }) {
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50">
           <FloatingDockDemo />
         </div>
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            duration: 4000,
+            style: {
+              background: '#1f2937',
+              color: '#fff',
+              border: '1px solid #374151',
+            },
+            success: {
+              iconTheme: {
+                primary: '#10b981',
+                secondary: '#fff',
+              },
+            },
+            error: {
+              iconTheme: {
+                primary: '#ef4444',
+                secondary: '#fff',
+              },
+            },
+          }}
+        />
       </body>
     </html>
   );

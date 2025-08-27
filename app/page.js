@@ -2,7 +2,7 @@
 import Link from "next/link";
 import Recent from "@/components/Recent";
 import RecentBlogs from "@/components/RecentBlogs";
-import { Suspense } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { StatCardSkeleton } from "@/components/Skeleton";
 import { ClientStats } from "@/components/ClientStats";
 
@@ -85,6 +85,44 @@ const TrendingIcon = () => (
 );
 
 export default function Home() {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const response = await fetch("/api/me");
+        if (response.ok) {
+          const data = await response.json();
+          setUser(data.user);
+        }
+      } catch (error) {
+        console.log("User not authenticated");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, []);
+
+  const getWelcomeMessage = () => {
+    if (loading) return "Welcome to DevStash";
+    if (user) {
+      const name = user.name || user.username || "there";
+      return `Welcome back, ${name}!`;
+    }
+    return "Welcome to DevStash";
+  };
+
+  const getWelcomeSubtitle = () => {
+    if (loading) return "A developer's portfolio and productivity hub";
+    if (user) {
+      return "Ready to continue building amazing things?";
+    }
+    return "A developer's portfolio and productivity hub";
+  };
+
   return (
     <div className="bg-[#0a0a0a] min-h-screen min-w-[320px] flex flex-col relative">
       {/* Ambient Background Effects */}
@@ -96,31 +134,33 @@ export default function Home() {
         {/* Welcome Section - Mobile optimized */}
         <div className="mb-8 md:mb-8">
           <h1 className="text-3xl md:text-4xl font-light text-white mb-3 md:mb-2 leading-tight">
-            Welcome to DevStash
+            {getWelcomeMessage()}
           </h1>
           <p className="text-zinc-400 text-base md:text-base leading-relaxed">
-            A developer's portfolio and productivity hub
+            {getWelcomeSubtitle()}
           </p>
         </div>
 
-        {/* Login to See History Notification */}
-        <div className="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-emerald-400 font-medium mb-1">Login to See Your History</h3>
-              <p className="text-emerald-300 text-sm">
-                Sign in to view your GitHub commits, LeetCode progress, and personalized dashboard
-              </p>
+        {/* Login to See History Notification - Only show if not logged in */}
+        {!loading && !user && (
+          <div className="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-emerald-400 font-medium mb-1">Login to See Your History</h3>
+                <p className="text-emerald-300 text-sm">
+                  Sign in to view your GitHub commits, LeetCode progress, and personalized dashboard
+                </p>
+              </div>
+              <Link
+                href="/login"
+                prefetch={true}
+                className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm hover:bg-emerald-700 transition-colors"
+              >
+                Login Now
+              </Link>
             </div>
-            <Link
-              href="/login"
-              prefetch={true}
-              className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm hover:bg-emerald-700 transition-colors"
-            >
-              Login Now
-            </Link>
           </div>
-        </div>
+        )}
 
         {/* Stats Overview - Mobile-first grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-8 md:mb-8">
@@ -188,7 +228,7 @@ export default function Home() {
             </h2>
             <div className="flex items-center space-x-3">
               <Link 
-                href="/blog"
+                href="/blogPage"
                 prefetch={true}
                 className="text-zinc-400 hover:text-white text-sm md:text-sm transition-colors px-3 py-2 md:px-0 md:py-0 rounded-lg md:rounded-none hover:bg-zinc-808/50 md:hover:bg-transparent"
               >

@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { showNoteSaved, showNoteDeleted, showNoteStarred, showNoteUnstarred, showCopied, showError, showSuccess } from "@/lib/toast";
 
 // SVG Icons
 const Plus = ({ size = 20 }) => (
@@ -155,7 +156,10 @@ const formatCodeBlock = (codeBlock) => {
           {language || 'text'}
         </span>
         <button
-          onClick={() => navigator.clipboard.writeText(code)}
+          onClick={() => {
+            navigator.clipboard.writeText(code);
+            showCopied();
+          }}
           className="text-xs text-zinc-400 hover:text-white transition-colors"
         >
           Copy
@@ -250,9 +254,11 @@ const Notes = () => {
         }
       } else {
         console.error("Failed to fetch notes:", response.statusText);
+        showError("Failed to load notes");
       }
     } catch (error) {
       console.error("Error fetching notes:", error);
+      showError("Failed to load notes");
       // Fallback to localStorage
       const localNotes = JSON.parse(
         localStorage.getItem("devstash_notes") || "[]"
@@ -349,6 +355,7 @@ const Notes = () => {
           };
 
           setHasUnsavedChanges(false);
+          showNoteSaved();
         } else if (response.status === 401) {
           // Unauthorized - save to localStorage instead
           console.log("User not logged in, saving to localStorage");
@@ -373,11 +380,14 @@ const Notes = () => {
             content: currentContent,
           };
           setHasUnsavedChanges(false);
+          showNoteSaved();
         } else {
           console.error("Failed to save note:", response.statusText);
+          showError("Failed to save note");
         }
       } catch (error) {
         console.error("Error saving note:", error);
+        showError("Failed to save note");
       } finally {
         setSaving(false);
       }
@@ -415,6 +425,7 @@ const Notes = () => {
         setNotes([newNote, ...notes]);
         selectNote(newNote);
         if (isMobile) setShowSidebar(false);
+        showNoteSaved();
       } else if (response.status === 401) {
         // Unauthorized - create in localStorage instead
         console.log("User not logged in, creating note in localStorage");
@@ -432,11 +443,14 @@ const Notes = () => {
         selectNote(newNote);
         localStorage.setItem("devstash_notes", JSON.stringify(updatedNotes));
         if (isMobile) setShowSidebar(false);
+        showNoteSaved();
       } else {
         console.error("Failed to create note:", response.statusText);
+        showError("Failed to create note");
       }
     } catch (error) {
       console.error("Error creating note:", error);
+      showError("Failed to create note");
     }
   };
 
@@ -479,6 +493,7 @@ const Notes = () => {
             setHasUnsavedChanges(false);
           }
         }
+        showNoteDeleted();
       } else if (response.status === 401) {
         // Unauthorized - delete from localStorage instead
         console.log("User not logged in, deleting from localStorage");
@@ -498,11 +513,14 @@ const Notes = () => {
             setHasUnsavedChanges(false);
           }
         }
+        showNoteDeleted();
       } else {
         console.error("Failed to delete note:", response.statusText);
+        showError("Failed to delete note");
       }
     } catch (error) {
       console.error("Error deleting note:", error);
+      showError("Failed to delete note");
     }
   };
 
@@ -533,6 +551,12 @@ const Notes = () => {
         if (selectedNote?._id === noteId) {
           setSelectedNote(updatedNote);
         }
+        
+        if (updatedNote.starred) {
+          showNoteStarred();
+        } else {
+          showNoteUnstarred();
+        }
       } else if (response.status === 401) {
         // Unauthorized - toggle star in localStorage instead
         console.log("User not logged in, toggling star in localStorage");
@@ -551,11 +575,19 @@ const Notes = () => {
         if (selectedNote?._id === noteId) {
           setSelectedNote(updatedNote);
         }
+        
+        if (updatedNote.starred) {
+          showNoteStarred();
+        } else {
+          showNoteUnstarred();
+        }
       } else {
         console.error("Failed to toggle star:", response.statusText);
+        showError("Failed to update note");
       }
     } catch (error) {
       console.error("Error toggling star:", error);
+      showError("Failed to update note");
     }
   };
 

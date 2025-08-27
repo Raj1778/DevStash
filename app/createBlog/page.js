@@ -4,6 +4,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { showBlogCreated, showError, showValidationError } from "@/lib/toast";
 
 export default function CreateBlogPage() {
   const [title, setTitle] = useState("");
@@ -42,6 +43,18 @@ export default function CreateBlogPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Validation
+    if (!title.trim()) {
+      showValidationError("title");
+      return;
+    }
+
+    if (!content.trim()) {
+      showValidationError("content");
+      return;
+    }
+
     setIsSubmitting(true);
     setError("");
 
@@ -65,16 +78,18 @@ export default function CreateBlogPage() {
 
       if (response.ok) {
         const blog = await response.json();
+        showBlogCreated();
         // Instant redirect without artificial delays
         router.push(`/blog/${blog.slug}`);
       } else {
         const errorData = await response.json();
-        setError(errorData.error || "Failed to create blog");
-        setIsSubmitting(false);
+        showError(errorData.error || "Failed to create blog");
       }
     } catch (error) {
-      setError("An unexpected error occurred");
+      showError("An unexpected error occurred");
       console.error("Error:", error);
+      setIsSubmitting(false);
+    } finally {
       setIsSubmitting(false);
     }
   };
