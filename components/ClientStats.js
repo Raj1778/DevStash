@@ -55,6 +55,38 @@ export function ClientStats() {
     fetchUserAndStats();
   }, []);
 
+  // Local streak tracking (days opened)
+  useEffect(() => {
+    const todayKey = () => {
+      const d = new Date();
+      return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
+    };
+    try {
+      const lastOpened = localStorage.getItem('devstash_last_opened_day');
+      const streakStr = localStorage.getItem('devstash_open_streak_days') || '0';
+      const currentDay = todayKey();
+      let newStreak = parseInt(streakStr, 10) || 0;
+
+      if (!lastOpened) {
+        newStreak = 1;
+      } else if (lastOpened !== currentDay) {
+        // Check if consecutive day
+        const prev = new Date(lastOpened);
+        const now = new Date();
+        const diffDays = Math.floor((now - new Date(prev.getFullYear(), prev.getMonth(), prev.getDate())) / (1000*60*60*24));
+        if (diffDays === 1) {
+          newStreak += 1;
+        } else if (diffDays > 1) {
+          newStreak = 1;
+        }
+      }
+
+      localStorage.setItem('devstash_last_opened_day', currentDay);
+      localStorage.setItem('devstash_open_streak_days', String(newStreak));
+      setStats(prev => ({ ...prev, streak: { days: newStreak } }));
+    } catch {}
+  }, []);
+
   // Fetch real-time stats
   const fetchStats = async (userData) => {
     if (!userData) return;

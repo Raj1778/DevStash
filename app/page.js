@@ -69,19 +69,15 @@ const BookIcon = () => (
   </svg>
 );
 
-const TrendingIcon = () => (
+const DocumentsIcon = () => (
   <svg
     className="w-6 h-6 md:w-5 md:h-5"
     fill="none"
     stroke="currentColor"
     viewBox="0 0 24 24"
   >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
-    />
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h10M7 11h10M7 15h7" />
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5z" />
   </svg>
 );
 
@@ -175,12 +171,12 @@ export default function Home() {
           </Suspense>
         </div>
 
-        {/* Quick Actions - Single column on mobile for better touch targets */}
+        {/* Quick Actions - Improved responsiveness */}
         <div className="mb-8 md:mb-8">
           <h2 className="text-xl md:text-xl font-light text-white mb-5 md:mb-4">
             Quick Actions
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
             <QuickAction
               title="Go to LeetCode"
               description="Practice coding challenges"
@@ -194,32 +190,14 @@ export default function Home() {
               href="/projects"
             />
             <QuickAction
-              title="Trending in Tech"
-              description="Discover popular topics"
-              icon={<TrendingIcon />}
-              onClick={() => console.log("Open search")}
+              title="My Documents"
+              description="Upload and manage your files"
+              icon={<DocumentsIcon />}
+              href="/documents"
             />
           </div>
         </div>
 
-        {/* Recent Activity */}
-        <div className="mb-8 md:mb-8">
-          <div className="flex items-center justify-between mb-5 md:mb-4">
-            <h2 className="text-xl md:text-xl font-light text-white">
-              Recent Activity
-            </h2>
-            <button className="text-zinc-400 hover:text-white text-sm md:text-sm transition-colors px-3 py-2 md:px-0 md:py-0 rounded-lg md:rounded-none hover:bg-zinc-808/50 md:hover:bg-transparent">
-              View all
-            </button>
-          </div>
-          <Suspense fallback={<div className="flex overflow-x-auto gap-8 md:gap-12 p-2 mx-12 md:mx-24 my-4 scrollbar-hide md:flex-wrap">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-16 w-36 min-w-24 rounded-xl bg-gray-700/50 animate-pulse" />
-            ))}
-          </div>}>
-            <Recent />
-          </Suspense>
-        </div>
 
         {/* Recent Blogs */}
         <div className="mb-8 md:mb-8 pb-6 md:pb-0">

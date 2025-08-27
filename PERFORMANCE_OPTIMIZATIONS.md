@@ -199,3 +199,4 @@ Your DevStash application now follows Next.js best practices and should provide:
 - **Optimized bundle** with better caching
 
 The website should now feel significantly faster and more responsive!
+

@@ -224,21 +224,21 @@ export default function ProjectsPage() {
                   const githubData = await githubRes.json();
                   
                   // Process repositories to fit ProjectCard structure
-                  const processedProjects = githubData.repositories
-                    .filter(repo => !repo.archived && repo.visibility === 'public')
+                  const processedProjects = (githubData.repositories || [])
+                    .filter(repo => !repo.archived && !repo.private)
                     .map(repo => ({
                       id: repo.id,
                       name: repo.name,
                       description: repo.description || "No description available",
                       language: repo.language || "Unknown",
                       status: repo.fork ? "Forked" : "Active",
-                      lastUpdated: formatDate(repo.updated_at),
-                      stars: repo.stargazers_count,
+                      lastUpdated: formatDate(repo.lastUpdated),
+                      stars: repo.stars,
                       size: formatSize(repo.size),
                       techStack: repo.topics || [],
-                      github: repo.html_url,
+                      github: repo.url,
                       demo: repo.homepage || null,
-                      forks: repo.forks_count
+                      forks: repo.forks
                     }));
                   
                   setProjects(processedProjects);
@@ -286,9 +286,13 @@ export default function ProjectsPage() {
   const filteredProjects =
     filter === "all"
       ? projects
-      : projects.filter((p) => p.status.toLowerCase() === filter || 
-          (filter === "active" && !p.fork) ||
-          (filter === "completed" && p.fork));
+      : projects.filter((p) => {
+          const status = (p.status || '').toLowerCase();
+          if (filter === 'active') return status === 'active' || status === 'forked';
+          if (filter === 'completed') return status === 'completed';
+          if (filter === 'paused') return status === 'paused';
+          return true;
+        });
 
   return (
     <div className="min-h-screen bg-black px-6 py-12">

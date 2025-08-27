@@ -6,20 +6,20 @@ import { showError } from "@/lib/toast";
 // News card component
 const NewsCard = ({ article }) => {
   const formatDate = (dateString) => {
+    if (!dateString) return "";
     const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "";
     const now = new Date();
     const diffInHours = Math.floor((now - date) / (1000 * 60 * 60));
-    
     if (diffInHours < 1) return "Just now";
     if (diffInHours < 24) return `${diffInHours}h ago`;
-    
     const diffInDays = Math.floor(diffInHours / 24);
     if (diffInDays < 7) return `${diffInDays}d ago`;
-    
     return date.toLocaleDateString();
   };
 
-  const truncateText = (text, maxLength = 100) => {
+  const truncateText = (text = "", maxLength = 100) => {
+    if (typeof text !== "string") return "";
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + "...";
   };
@@ -32,10 +32,10 @@ const NewsCard = ({ article }) => {
       <div className="flex items-start space-x-3">
         {/* News Image */}
         <div className="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden bg-zinc-800">
-          {article.urlToImage ? (
+          {article?.urlToImage ? (
             <img
               src={article.urlToImage}
-              alt={article.title}
+              alt={article?.title || 'news image'}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               onError={(e) => {
                 e.target.style.display = 'none';
@@ -43,7 +43,7 @@ const NewsCard = ({ article }) => {
               }}
             />
           ) : null}
-          <div className="w-full h-full bg-zinc-800 flex items-center justify-center text-zinc-500 text-xs" style={{ display: article.urlToImage ? 'none' : 'flex' }}>
+          <div className="w-full h-full bg-zinc-800 flex items-center justify-center text-zinc-500 text-xs" style={{ display: article?.urlToImage ? 'none' : 'flex' }}>
             📰
           </div>
         </div>
@@ -52,25 +52,25 @@ const NewsCard = ({ article }) => {
         <div className="flex-1 min-w-0">
           <div className="flex items-center space-x-2 mb-1">
             <span className="text-xs text-emerald-400 font-medium uppercase tracking-wide">
-              {article.query}
+              {article?.query || 'Trending'}
             </span>
             <span className="text-xs text-zinc-500">•</span>
             <span className="text-xs text-zinc-500">
-              {formatDate(article.publishedAt)}
+              {formatDate(article?.publishedAt)}
             </span>
           </div>
           
           <h3 className="text-sm font-medium text-white mb-2 line-clamp-2 group-hover:text-emerald-400 transition-colors">
-            {article.title}
+            {article?.title || 'Untitled'}
           </h3>
           
           <p className="text-xs text-zinc-400 line-clamp-2">
-            {truncateText(article.description, 80)}
+            {truncateText(article?.description || '', 80)}
           </p>
           
           <div className="flex items-center justify-between mt-2">
             <span className="text-xs text-zinc-500">
-              {article.source?.name || 'Unknown Source'}
+              {article?.source?.name || 'Unknown Source'}
             </span>
             <span className="text-xs text-emerald-400 group-hover:text-emerald-300 transition-colors">
               Read more →
@@ -113,7 +113,7 @@ export default function TrendingNews() {
     const fetchNews = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/news');
+        const response = await fetch('/api/news', { cache: 'no-store' });
         
         if (response.ok) {
           const data = await response.json();
@@ -145,10 +145,18 @@ export default function TrendingNews() {
     );
   }
 
+  if (!loading && !error && news.length === 0) {
+    return (
+      <div className="p-4 bg-zinc-900/40 border border-zinc-800 rounded-xl text-center text-zinc-400 text-sm">
+        No trending news available right now.
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-3">
+    <div className="mt-3 mb-20 space-y-3">
       {loading ? (
-        // Show 3 skeleton cards while loading
+        // Show 3 skeleton cards while loadings
         <>
           <NewsCardSkeleton />
           <NewsCardSkeleton />

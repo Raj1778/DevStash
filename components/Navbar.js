@@ -68,8 +68,8 @@ export default function Navbar({ home }) {
         </Link>
         
         <div className="flex items-center space-x-4">
-          {/* Login Button - Show when user is not authenticated */}
-          {!loading && !user && (
+          {/* Login Button - Show when user is not authenticated and not on mobile */}
+          {!loading && !user && !isMobile && (
             <Link
               href="/login"
               prefetch={true}
