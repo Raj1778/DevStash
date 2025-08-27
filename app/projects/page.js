@@ -1,6 +1,7 @@
 // app/projects/page.js
 "use client";
 import { useState, useEffect } from "react";
+import { defer } from "@/lib/utils/defer";
 import Link from "next/link";
 import { ProjectCardSkeleton } from "@/components/Skeleton";
 
@@ -206,24 +207,18 @@ export default function ProjectsPage() {
   const [filter, setFilter] = useState("all");
 
   useEffect(() => {
-    // Start fetching immediately but don't block the UI
-    const fetchData = async () => {
+    defer(async () => {
       try {
-        // Fetch user data first
-        const userRes = await fetch("/api/me");
+        const userRes = await fetch("/api/me", { cache: 'no-store' });
         if (userRes.ok) {
           const userData = await userRes.json();
           if (userData && userData.user) {
             setUser(userData.user);
-            
-            // Fetch GitHub repositories if username is available
             if (userData.user.githubUsername) {
               try {
-                const githubRes = await fetch(`/api/github?username=${userData.user.githubUsername}`);
+                const githubRes = await fetch(`/api/github?username=${userData.user.githubUsername}`, { cache: 'no-store' });
                 if (githubRes.ok) {
                   const githubData = await githubRes.json();
-                  
-                  // Process repositories to fit ProjectCard structure
                   const processedProjects = (githubData.repositories || [])
                     .filter(repo => !repo.archived && !repo.private)
                     .map(repo => ({
@@ -240,28 +235,17 @@ export default function ProjectsPage() {
                       demo: repo.homepage || null,
                       forks: repo.forks
                     }));
-                  
                   setProjects(processedProjects);
                 }
-              } catch (error) {
-                console.error('Failed to fetch GitHub data:', error);
-              }
+              } catch {}
             }
           }
         }
-      } catch (error) {
-        console.error('Failed to fetch data:', error);
-      } finally {
+      } catch {}
+      finally {
         setLoading(false);
       }
-    };
-
-    // Small delay to ensure skeleton is visible for better UX
-    const timer = setTimeout(() => {
-      fetchData();
-    }, 100);
-
-    return () => clearTimeout(timer);
+    }, { timeout: 1400 });
   }, []);
 
   // Helper functions
@@ -308,25 +292,28 @@ export default function ProjectsPage() {
               <p className="text-gray-400">Your development portfolio</p>
             </div>
 
-            <Link
-              href="/projects/new"
-              className="px-6 py-3 bg-white text-black rounded-lg font-medium hover:bg-gray-200 transition-colors duration-200 flex items-center"
-            >
-              <svg
-                className="w-4 h-4 mr-2"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 4v16m8-8H4"
-                />
-              </svg>
-              New Project
-            </Link>
+           <a
+  href={user?.githubUsername 
+    ? `https://github.com/${user.githubUsername}/tab=repositories` 
+    : "https://github.com"}
+  className="px-6 py-3 bg-white text-black rounded-lg font-medium hover:bg-gray-200 transition-colors duration-200 flex items-center"
+>
+  <svg
+    className="w-4 h-4 mr-2"
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M12 4v16m8-8H4"
+    />
+  </svg>
+  New Project
+</a>
+
           </div>
 
           {/* Filter Tabs */}

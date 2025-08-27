@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { defer } from "@/lib/utils/defer";
 import Link from "next/link";
 import { showError } from "@/lib/toast";
 
@@ -110,11 +111,10 @@ export default function TrendingNews() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchNews = async () => {
+    defer(async () => {
       try {
         setLoading(true);
         const response = await fetch('/api/news', { cache: 'no-store' });
-        
         if (response.ok) {
           const data = await response.json();
           setNews(data.articles || []);
@@ -124,15 +124,11 @@ export default function TrendingNews() {
           showError('Failed to load trending news');
         }
       } catch (error) {
-        console.error('Error fetching news:', error);
         setError('Failed to fetch news');
-        showError('Failed to load trending news');
       } finally {
         setLoading(false);
       }
-    };
-
-    fetchNews();
+    }, { timeout: 1200 });
   }, []);
 
   if (error) {

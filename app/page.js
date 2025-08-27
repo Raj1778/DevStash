@@ -4,6 +4,7 @@ import Recent from "@/components/Recent";
 import RecentBlogs from "@/components/RecentBlogs";
 import TrendingNews from "@/components/TrendingNews";
 import { Suspense, useState, useEffect } from "react";
+import { defer } from "@/lib/utils/defer";
 import { StatCardSkeleton } from "@/components/Skeleton";
 import { ClientStats } from "@/components/ClientStats";
 
@@ -28,7 +29,7 @@ const QuickAction = ({ title, description, icon, onClick, href }) => {
   );
 
   return href ? (
-    <Link href={href} prefetch={true}>
+    <Link href={href} prefetch={false}>
       {content}
     </Link>
   ) : (
@@ -86,21 +87,19 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const checkAuth = async () => {
+    defer(async () => {
       try {
-        const response = await fetch("/api/me");
+        const response = await fetch("/api/me", { cache: 'no-store' });
         if (response.ok) {
           const data = await response.json();
           setUser(data.user);
         }
       } catch (error) {
-        console.log("User not authenticated");
+        // ignore
       } finally {
         setLoading(false);
       }
-    };
-
-    checkAuth();
+    }, { timeout: 800 });
   }, []);
 
   const getWelcomeMessage = () => {
@@ -150,10 +149,31 @@ export default function Home() {
               </div>
               <Link
                 href="/login"
-                prefetch={true}
+                prefetch={false}
                 className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm hover:bg-emerald-700 transition-colors"
               >
                 Login Now
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {/* Missing usernames prompt */}
+        {!loading && user && (!user.githubUsername || !user.leetcodeUsername) && (
+          <div className="mb-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-yellow-400 font-medium mb-1">Complete your setup</h3>
+                <p className="text-yellow-300 text-sm">
+                  Add your GitHub and LeetCode usernames in My Account to see stats.
+                </p>
+              </div>
+              <Link
+                href="/my-account"
+                prefetch={false}
+                className="px-4 py-2 bg-yellow-600 text-white rounded-lg text-sm hover:bg-yellow-700 transition-colors"
+              >
+                Go to My Account
               </Link>
             </div>
           </div>
@@ -208,7 +228,7 @@ export default function Home() {
             <div className="flex items-center space-x-3">
               <Link 
                 href="/blogPage"
-                prefetch={true}
+                prefetch={false}
                 className="text-zinc-400 hover:text-white text-sm md:text-sm transition-colors px-3 py-2 md:px-0 md:py-0 rounded-lg md:rounded-none hover:bg-zinc-808/50 md:hover:bg-transparent"
               >
                 View all blogs
@@ -233,7 +253,7 @@ export default function Home() {
             <div className="flex items-center space-x-3">
               <Link 
                 href="/news"
-                prefetch={true}
+                prefetch={false}
                 className="text-zinc-400 hover:text-white text-sm md:text-sm transition-colors px-3 py-2 md:px-0 md:py-0 rounded-lg md:rounded-none hover:bg-zinc-808/50 md:hover:bg-transparent"
               >
                 View all news

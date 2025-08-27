@@ -46,8 +46,7 @@ export default function RegisterPage() {
       const data = await response.json();
 
       if (response.ok) {
-        router.push("/");
-        router.refresh();
+        router.push("/onboarding/github");
       } else {
         setError(data.error || "Registration failed");
       }
@@ -59,7 +58,7 @@ export default function RegisterPage() {
   };
 
   const handleGoogleRegister = () => {
-    console.log("Google register clicked");
+    window.location.href = "/api/auth/google";
   };
 
   return (

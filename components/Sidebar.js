@@ -20,7 +20,7 @@ export default function Sidebar({ user }) {
         <li>
           <Link
             href="/"
-            prefetch={true}
+            prefetch={false}
             className="block py-2 px-4 rounded hover:bg-white/10 transition"
           >
             Dashboard
@@ -29,7 +29,7 @@ export default function Sidebar({ user }) {
         <li>
           <Link
             href="/projects"
-            prefetch={true}
+            prefetch={false}
             className="block py-2 px-4 rounded hover:bg-white/10 transition"
           >
             Projects
@@ -38,7 +38,7 @@ export default function Sidebar({ user }) {
         <li>
           <Link
             href="/my-account"
-            prefetch={true}
+            prefetch={false}
             className="block py-2 px-4 rounded hover:bg-white/10 transition"
           >
             My Account
@@ -70,7 +70,7 @@ export default function Sidebar({ user }) {
         <li>
           <Link
             href="/about-developers"
-            prefetch={true}
+            prefetch={false}
             className="block py-2 px-4 rounded bg-blue-700 hover:bg-blue-800 transition"
           >
             About Developer

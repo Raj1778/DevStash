@@ -73,7 +73,7 @@ export async function POST(request) {
     // Return user without password
     const userResponse = user.getPublicProfile();
 
-    return new Response(JSON.stringify(userResponse), {
+    return new Response(JSON.stringify({ ok: true, user: userResponse }), {
       status: 201,
       headers: { "Content-Type": "application/json" },
     });

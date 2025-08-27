@@ -51,7 +51,7 @@ export default function LoginPage() {
   };
 
   const handleGoogleLogin = () => {
-    console.log("Google login clicked");
+    window.location.href = "/api/auth/google";
   };
 
   return (
