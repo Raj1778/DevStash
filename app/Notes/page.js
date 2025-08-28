@@ -2,30 +2,18 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { showNoteSaved, showNoteDeleted, showNoteStarred, showNoteUnstarred, showCopied, showError, showSuccess } from "@/lib/toast";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 
 // SVG Icons
 const Plus = ({ size = 20 }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-  >
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <path d="M12 5v14M5 12h14" />
   </svg>
 );
 
 const Menu = ({ size = 20 }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-  >
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <line x1="4" y1="12" x2="20" y2="12" />
     <line x1="4" y1="6" x2="20" y2="6" />
     <line x1="4" y1="18" x2="20" y2="18" />
@@ -33,167 +21,252 @@ const Menu = ({ size = 20 }) => (
 );
 
 const Trash = ({ size = 20 }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-  >
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <polyline points="3,6 5,6 21,6" />
     <path d="m19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
   </svg>
 );
 
 const Star = ({ size = 20, filled = false }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill={filled ? "currentColor" : "none"}
-    stroke="currentColor"
-    strokeWidth="2"
-  >
+  <svg width={size} height={size} viewBox="0 0 24 24" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
     <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26 12,2" />
   </svg>
 );
 
 const FileText = ({ size = 20 }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-  >
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2-2V8z" />
     <polyline points="14,2 14,8 20,8" />
   </svg>
 );
 
 const X = ({ size = 20 }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-  >
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <line x1="18" y1="6" x2="6" y2="18" />
     <line x1="6" y1="6" x2="18" y2="18" />
   </svg>
 );
 
 const LoadingSpinner = ({ size = 20 }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    className="animate-spin"
-  >
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="animate-spin">
     <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
   </svg>
 );
 
-// Code detection and formatting utilities
-const detectCodeBlocks = (content) => {
-  const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g;
-  const inlineCodeRegex = /`([^`]+)`/g;
-  
-  let formattedContent = content;
-  let codeBlocks = [];
-  let blockIndex = 0;
-  
-  // Replace code blocks with placeholders
-  formattedContent = formattedContent.replace(codeBlockRegex, (match, language, code) => {
-    const placeholder = `__CODE_BLOCK_${blockIndex}__`;
-    codeBlocks.push({
-      type: 'block',
-      language: language || 'text',
-      code: code.trim(),
-      placeholder
-    });
-    blockIndex++;
-    return placeholder;
-  });
-  
-  // Replace inline code with placeholders
-  formattedContent = formattedContent.replace(inlineCodeRegex, (match, code) => {
-    const placeholder = `__INLINE_CODE_${blockIndex}__`;
-    codeBlocks.push({
-      type: 'inline',
-      code: code,
-      placeholder
-    });
-    blockIndex++;
-    return placeholder;
-  });
-  
-  return { formattedContent, codeBlocks };
+// Language detection utility
+const detectLanguage = (code) => {
+  // Simple heuristic-based language detection
+  const patterns = {
+  javascript: [
+    /(?:const|let|var)\s+\w+\s*=/,
+    /function\s+\w+\s*\(/,
+    /=>\s*{/,
+    /console\.log/,
+    /require\(/,
+    /import\s+.*\s+from/,
+  ],
+  python: [
+    /def\s+\w+\s*\(/,
+    /import\s+\w+/,
+    /from\s+\w+\s+import/,
+    /if\s+__name__\s*==/,
+    /print\s*\(/,
+    /class\s+\w+/,
+  ],
+  java: [
+    /public\s+class/,
+    /public\s+static\s+void\s+main/,
+    /System\.out\.println/,
+    /import\s+java\./,
+    /private\s+\w+/,
+  ],
+  html: [/<html/, /<div/, /<span/, /<body/, /<head/, /<script/, /<style/],
+  css: [
+    /\w+\s*{[\s\S]*}/,
+    /color:\s*#?\w+/,
+    /margin:\s*\d+/,
+    /padding:\s*\d+/,
+    /display:\s*\w+/,
+  ],
+  sql: [
+    /\bSELECT\s+.*\s+FROM\b/i,
+    /\bINSERT\s+INTO\b/i,
+    /\bUPDATE\s+.*\s+SET\b/i,
+    /\bDELETE\s+FROM\b/i,
+    /\bCREATE\s+(TABLE|DATABASE)\b/i,
+    /\bDROP\s+(TABLE|DATABASE)\b/i,
+  ],
+  json: [/^\s*{[\s\S]*}\s*$/, /^\s*\[[\s\S]*\]\s*$/],
+  typescript: [
+    /interface\s+\w+/,
+    /type\s+\w+\s*=/,
+    /:\s*(string|number|boolean)/,
+    /export\s+(default\s+)?/,
+  ],
+  jsx: [
+    /<\w+.*\/>/,
+    /<\w+.*>.*<\/\w+>/,
+    /className=/,
+    /onClick=/,
+    /useState\(/,
+  ],
+  bash: [
+    /^\s*#!/,
+    /\$\s*\w+/,
+    /echo\s+/,
+    /if\s+\[\[/,
+    /then\s*$/m,
+    /fi\s*$/m,
+  ],
+  cpp: [
+    /#include\s*<[a-zA-Z0-9_]+>/,
+    /std::cout/,
+    /std::endl/,
+    /using\s+namespace\s+\w+;/,
+    /int\s+main\s*\(/,
+    /return\s+0;/,
+  ],
+  // New additions:
+  c: [
+    /#include\s*<stdio\.h>/,
+    /printf\s*\(/,
+    /scanf\s*\(/,
+    /int\s+main\s*\(/,
+    /return\s+0;/,
+  ],
+  react: [
+    /import\s+React/,
+    /from\s+['"]react['"]/,
+    /useState\(/,
+    /useEffect\(/,
+    /export\s+default\s+function/,
+    /<\w+.*>.*<\/\w+>/,
+  ],
+  rust: [
+    /fn\s+main\s*\(/,
+    /let\s+mut\s+\w+/,
+    /println!\s*\(/,
+    /use\s+\w+(::\w+)*/,
+    /struct\s+\w+/,
+    /impl\s+\w+/,
+  ],
+  go: [
+    /package\s+main/,
+    /import\s+\(/,
+    /func\s+main\s*\(/,
+    /fmt\.Println/,
+    /var\s+\w+\s+\w+/,
+    /:=\s*/,
+  ],
 };
 
-const formatCodeBlock = (codeBlock) => {
-  const { type, language, code } = codeBlock;
-  
-  if (type === 'inline') {
+
+  for (const [lang, regexes] of Object.entries(patterns)) {
+    const matches = regexes.filter(regex => regex.test(code)).length;
+    if (matches >= 2 || (matches === 1 && code.length < 100)) {
+      return lang;
+    }
+  }
+
+  // Check for code-like patterns
+  const hasCodePatterns = 
+    /[{}()[\];]/.test(code) || // Brackets and semicolons
+    /^\s*(function|class|const|let|var|def|import|export|return)\s/m.test(code) || // Keywords
+    /[=<>!]+/.test(code) || // Operators
+    /\w+\(\)/.test(code); // Function calls
+
+  return hasCodePatterns ? 'text' : null;
+};
+
+// Smart content editor with auto-detection
+// Smart content editor with auto-detection
+const SmartEditor = ({ content, onChange, isEditing, onFocus, onBlur }) => {
+  const [localContent, setLocalContent] = useState(content);
+  const [detectedLanguage, setDetectedLanguage] = useState(detectLanguage(content));
+  const textareaRef = useRef(null);
+
+  useEffect(() => {
+    setLocalContent(content);
+    setDetectedLanguage(detectLanguage(content));
+  }, [content]);
+
+  const handleChange = (e) => {
+    const newContent = e.target.value;
+    setLocalContent(newContent);
+    setDetectedLanguage(detectLanguage(newContent)); // Recalculate on every change
+    onChange(newContent);
+  };
+
+  useEffect(() => {
+    if (isEditing && textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  }, [isEditing]);
+
+  const isCode = detectedLanguage !== null;
+
+  if (isEditing) {
     return (
-      <code className="bg-zinc-800 text-green-400 px-1.5 py-0.5 rounded text-sm font-mono">
-        {code}
-      </code>
+      <textarea
+        ref={textareaRef}
+        value={localContent}
+        onChange={handleChange}
+        onBlur={onBlur}
+        className="w-full h-full bg-transparent border-none outline-none text-white placeholder-zinc-500 resize-none text-base leading-relaxed font-mono"
+        placeholder="Start typing or paste your content..."
+        style={{ minHeight: "400px" }}
+      />
     );
   }
-  
-  return (
-    <div className="my-4 rounded-lg overflow-hidden border border-zinc-700">
-      <div className="bg-zinc-800 px-4 py-2 border-b border-zinc-700 flex items-center justify-between">
-        <span className="text-xs text-zinc-400 font-mono uppercase">
-          {language || 'text'}
-        </span>
-        <button
-          onClick={() => {
-            navigator.clipboard.writeText(code);
-            showCopied();
-          }}
-          className="text-xs text-zinc-400 hover:text-white transition-colors"
-        >
-          Copy
-        </button>
+
+  if (isCode && content.trim()) {
+    return (
+      <div 
+        onClick={onFocus}
+        className="cursor-text rounded-lg overflow-hidden"
+      >
+        <div className="bg-zinc-900 rounded-lg border border-zinc-800">
+          <div className="px-4 py-2 border-b border-zinc-800 flex items-center justify-between bg-zinc-800/50">
+            <span className="text-xs text-zinc-400 font-mono">
+              {detectedLanguage || 'code'}
+            </span>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                navigator.clipboard.writeText(content);
+                showCopied();
+              }}
+              className="text-xs text-zinc-400 hover:text-white transition-colors px-2 py-1 rounded hover:bg-zinc-700"
+            >
+              Copy
+            </button>
+          </div>
+          <SyntaxHighlighter
+            language={detectedLanguage || 'text'}
+            style={oneDark}
+            customStyle={{
+              margin: 0,
+              padding: "16px",
+              background: "transparent",
+              fontSize: "0.875rem",
+            }}
+            showLineNumbers={content.split('\n').length > 5}
+          >
+            {content}
+          </SyntaxHighlighter>
+        </div>
       </div>
-      <pre className="bg-zinc-900 p-4 overflow-x-auto">
-        <code className="text-sm font-mono text-zinc-100">
-          {code}
-        </code>
-      </pre>
+    );
+  }
+
+  return (
+    <div 
+      onClick={onFocus}
+      className="w-full min-h-[400px] cursor-text whitespace-pre-wrap text-base leading-relaxed text-zinc-100"
+    >
+      {content || <span className="text-zinc-500">Click to start typing or paste your content...</span>}
     </div>
   );
-};
-
-const renderFormattedContent = (content) => {
-  const { formattedContent, codeBlocks } = detectCodeBlocks(content);
-  
-  // Split content by code block placeholders
-  const parts = formattedContent.split(/(__CODE_BLOCK_\d+__|__INLINE_CODE_\d+__)/);
-  
-  return parts.map((part, index) => {
-    const codeBlock = codeBlocks.find(block => block.placeholder === part);
-    
-    if (codeBlock) {
-      return <React.Fragment key={index}>{formatCodeBlock(codeBlock)}</React.Fragment>;
-    }
-    
-    // Regular text content
-    return (
-      <span key={index} className="whitespace-pre-wrap">
-        {part}
-      </span>
-    );
-  });
 };
 
 const Notes = () => {
@@ -208,11 +281,10 @@ const Notes = () => {
   const [saving, setSaving] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [previewMode, setPreviewMode] = useState(false);
+  const [isEditingContent, setIsEditingContent] = useState(false);
 
   const saveTimeoutRef = useRef(null);
   const lastSavedRef = useRef({ title: "", content: "" });
-
   const router = useRouter();
 
   // Check authentication status
@@ -232,19 +304,15 @@ const Notes = () => {
       const response = await fetch("/api/notes");
       if (response.ok) {
         const notesData = await response.json();
-        // Sort notes by updatedAt (most recent first)
         const sortedNotes = notesData.sort(
           (a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)
         );
         setNotes(sortedNotes);
 
-        // Auto-select first note if none selected and notes exist
         if (sortedNotes.length > 0 && !selectedNote) {
           selectNote(sortedNotes[0]);
         }
       } else if (response.status === 401) {
-        // Unauthorized - load from localStorage instead
-        console.log("User not logged in, loading from localStorage");
         const localNotes = JSON.parse(
           localStorage.getItem("devstash_notes") || "[]"
         );
@@ -259,7 +327,6 @@ const Notes = () => {
     } catch (error) {
       console.error("Error fetching notes:", error);
       showError("Failed to load notes");
-      // Fallback to localStorage
       const localNotes = JSON.parse(
         localStorage.getItem("devstash_notes") || "[]"
       );
@@ -283,14 +350,13 @@ const Notes = () => {
     checkScreenSize();
     window.addEventListener("resize", checkScreenSize);
 
-    // Check auth and fetch notes on component mount
     checkAuth();
     fetchNotes();
 
     return () => window.removeEventListener("resize", checkScreenSize);
   }, []);
 
-  // Track changes and set unsaved state
+  // Track changes
   useEffect(() => {
     if (!selectedNote) {
       setHasUnsavedChanges(false);
@@ -303,18 +369,16 @@ const Notes = () => {
     setHasUnsavedChanges(titleChanged || contentChanged);
   }, [currentTitle, currentContent, selectedNote]);
 
-  // Auto-save with proper debouncing (only when typing stops)
+
+  // Auto-save
   useEffect(() => {
     if (!selectedNote || !hasUnsavedChanges) return;
 
-    // Clear existing timeout
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
 
-    // Set new timeout - save after user stops typing for 2 seconds
     saveTimeoutRef.current = setTimeout(async () => {
-      // Check if content actually changed
       const titleChanged = currentTitle !== lastSavedRef.current.title;
       const contentChanged = currentContent !== lastSavedRef.current.content;
 
@@ -337,7 +401,6 @@ const Notes = () => {
         if (response.ok) {
           const updatedNote = await response.json();
 
-          // Update the notes list
           setNotes((prev) =>
             prev
               .map((note) =>
@@ -347,18 +410,16 @@ const Notes = () => {
           );
 
           setSelectedNote(updatedNote);
-
-          // Update last saved reference
           lastSavedRef.current = {
             title: currentTitle,
             content: currentContent,
           };
-
+          
           setHasUnsavedChanges(false);
+          // Set to display mode after a successful auto-save
+          setIsEditingContent(false);
           showNoteSaved();
         } else if (response.status === 401) {
-          // Unauthorized - save to localStorage instead
-          console.log("User not logged in, saving to localStorage");
           const updatedNote = {
             ...selectedNote,
             title: currentTitle || "Untitled Note",
@@ -366,7 +427,6 @@ const Notes = () => {
             updatedAt: new Date().toISOString(),
           };
 
-          // Update notes in state and localStorage
           const updatedNotes = notes.map((note) =>
             note._id === selectedNote._id ? updatedNote : note
           );
@@ -374,12 +434,13 @@ const Notes = () => {
           setSelectedNote(updatedNote);
           localStorage.setItem("devstash_notes", JSON.stringify(updatedNotes));
 
-          // Update last saved reference
           lastSavedRef.current = {
             title: currentTitle,
             content: currentContent,
           };
           setHasUnsavedChanges(false);
+          // Set to display mode after a successful auto-save
+          setIsEditingContent(false);
           showNoteSaved();
         } else {
           console.error("Failed to save note:", response.statusText);
@@ -391,7 +452,7 @@ const Notes = () => {
       } finally {
         setSaving(false);
       }
-    }, 2000); // Save after 2 seconds of no typing
+    }, 2000);
 
     return () => {
       if (saveTimeoutRef.current) {
@@ -399,7 +460,6 @@ const Notes = () => {
       }
     };
   }, [currentTitle, currentContent, selectedNote, hasUnsavedChanges]);
-
   const filteredNotes = notes.filter(
     (note) =>
       note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -427,10 +487,8 @@ const Notes = () => {
         if (isMobile) setShowSidebar(false);
         showNoteSaved();
       } else if (response.status === 401) {
-        // Unauthorized - create in localStorage instead
-        console.log("User not logged in, creating note in localStorage");
         const newNote = {
-          _id: Date.now().toString(), // Generate temporary ID
+          _id: Date.now().toString(),
           title: "Untitled Note",
           content: "",
           starred: false,
@@ -458,14 +516,12 @@ const Notes = () => {
     setSelectedNote(note);
     setCurrentTitle(note.title);
     setCurrentContent(note.content);
-
-    // Update last saved reference
     lastSavedRef.current = {
       title: note.title,
       content: note.content,
     };
-
     setHasUnsavedChanges(false);
+    setIsEditingContent(false);
     if (isMobile) setShowSidebar(false);
   };
 
@@ -495,8 +551,6 @@ const Notes = () => {
         }
         showNoteDeleted();
       } else if (response.status === 401) {
-        // Unauthorized - delete from localStorage instead
-        console.log("User not logged in, deleting from localStorage");
         const updatedNotes = notes.filter((note) => note._id !== noteId);
         setNotes(updatedNotes);
         localStorage.setItem("devstash_notes", JSON.stringify(updatedNotes));
@@ -558,8 +612,6 @@ const Notes = () => {
           showNoteUnstarred();
         }
       } else if (response.status === 401) {
-        // Unauthorized - toggle star in localStorage instead
-        console.log("User not logged in, toggling star in localStorage");
         const updatedNote = {
           ...noteToUpdate,
           starred: !noteToUpdate.starred,
@@ -604,11 +656,10 @@ const Notes = () => {
 
   return (
     <div className="min-h-screen bg-black text-white flex relative">
-      {/* Info Banner for non-logged in users */}
+      {/* Info Banner */}
       {!isAuthenticated && notes.length === 0 && (
         <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 bg-blue-900/90 border border-blue-700 rounded-lg px-4 py-2 text-sm text-blue-200 backdrop-blur-sm">
-          💡 Notes are saved locally in your browser. Login to sync across
-          devices!
+          💡 Notes are saved locally in your browser. Login to sync across devices!
         </div>
       )}
 
@@ -766,18 +817,6 @@ const Notes = () => {
           </div>
 
           <div className="flex items-center space-x-4">
-            {selectedNote && (
-              <button
-                onClick={() => setPreviewMode(!previewMode)}
-                className={`px-3 py-1 rounded text-sm transition-colors ${
-                  previewMode 
-                    ? 'bg-blue-600 text-white' 
-                    : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
-                }`}
-              >
-                {previewMode ? 'Edit' : 'Preview'}
-              </button>
-            )}
             {hasUnsavedChanges && !saving && (
               <div className="flex items-center text-amber-400 text-sm">
                 <div className="w-2 h-2 bg-amber-400 rounded-full mr-2"></div>
@@ -827,21 +866,13 @@ const Notes = () => {
 
               {/* Content */}
               <div className="flex-1 p-4 md:p-6 overflow-y-auto">
-                {previewMode ? (
-                  <div className="prose prose-invert max-w-none">
-                    <div className="text-base leading-relaxed text-zinc-100">
-                      {renderFormattedContent(currentContent)}
-                    </div>
-                  </div>
-                ) : (
-                  <textarea
-                    value={currentContent}
-                    onChange={(e) => setCurrentContent(e.target.value)}
-                    className="w-full h-full bg-transparent border-none outline-none text-white placeholder-zinc-500 resize-none text-base leading-relaxed font-mono"
-                    placeholder="Start writing your note... Use ```language for code blocks and `code` for inline code"
-                    style={{ minHeight: "400px" }}
-                  />
-                )}
+                <SmartEditor
+                  content={currentContent}
+                  onChange={setCurrentContent}
+                  isEditing={isEditingContent}
+                  onFocus={() => setIsEditingContent(true)}
+                  onBlur={() => setIsEditingContent(false)}
+                />
               </div>
             </div>
           ) : (
