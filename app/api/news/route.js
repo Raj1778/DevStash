@@ -77,9 +77,10 @@ async function fetchFromGuardian(limit = 10) {
       
       try {
         const response = await fetch(
-          `https://content.guardianapis.com/search?q=${encodeURIComponent(query)}&section=technology|business|science&page-size=${articlesPerQuery + 2}&show-fields=thumbnail,trailText&api-key=${apiKey}`,
-          { next: { revalidate: 3600 } }
-        );
+  `https://content.guardianapis.com/search?q=${encodeURIComponent(query)}&section=technology|business|science&page-size=${articlesPerQuery + 2}&show-fields=thumbnail,trailText&order-by=newest&api-key=${apiKey}`,
+  { next: { revalidate: 3600 } }
+);
+
         
         if (response.ok) {
           const data = await response.json();
@@ -119,10 +120,11 @@ async function fetchFromGuardian(limit = 10) {
     if (allArticles.length < Math.min(limit, 5)) {
       try {
         const needed = limit - allArticles.length;
-        const response = await fetch(
-          `https://content.guardianapis.com/search?section=technology&page-size=${needed + 3}&show-fields=thumbnail,trailText&api-key=${apiKey}`,
-          { next: { revalidate: 3600 } }
-        );
+       const response = await fetch(
+  `https://content.guardianapis.com/search?section=technology&page-size=${needed + 3}&show-fields=thumbnail,trailText&order-by=newest&api-key=${apiKey}`,
+  { next: { revalidate: 3600 } }
+);
+
         
         if (response.ok) {
           const data = await response.json();
@@ -294,22 +296,22 @@ export async function GET(request) {
     const limit = parseInt(url.searchParams.get('limit')) || 10; // Default to 10, allow override
     const priority = url.searchParams.get('priority') === 'true'; // For dashboard priority loading
     
-    // Check cache first
-    const cacheKey = `news_${limit}`;
-    if (newsCache.data && 
-        newsCache.timestamp && 
-        (Date.now() - newsCache.timestamp) < CACHE_DURATION &&
-        newsCache.data.articles.length >= Math.min(limit, 3)) {
-      
-      // Return cached data with requested limit
-      const cachedResult = {
-        articles: newsCache.data.articles.slice(0, limit),
-        totalResults: newsCache.data.totalResults,
-        cached: true
-      };
-      console.log(`Serving ${cachedResult.articles.length} cached articles`);
-      return NextResponse.json(cachedResult);
-    }
+   // Allow bypassing the cache with ?fresh=true
+const forceFresh = url.searchParams.get('fresh') === 'true';
+
+if (!forceFresh && newsCache.data && 
+    newsCache.timestamp && 
+    (Date.now() - newsCache.timestamp) < CACHE_DURATION &&
+    newsCache.data.articles.length >= Math.min(limit, 3)) {
+
+  const cachedResult = {
+    articles: newsCache.data.articles.slice(0, limit),
+    totalResults: newsCache.data.totalResults,
+    cached: true
+  };
+  console.log(`Serving ${cachedResult.articles.length} cached articles`);
+  return NextResponse.json(cachedResult);
+}
 
     console.log(`Fetching ${limit} fresh articles from alternative sources...`);
 

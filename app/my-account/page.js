@@ -286,9 +286,7 @@ export default function MyAccountPage() {
 
           {/* Actions */}
           <div className="flex items-center justify-between pt-6">
-            <button className="px-6 py-3 text-gray-400 hover:text-white transition-colors duration-200">
-              Reset to defaults
-            </button>
+            
             <button
               onClick={handleSave}
               disabled={saving}

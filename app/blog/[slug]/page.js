@@ -39,7 +39,7 @@ export default async function BlogPage({ params }) {
       <div className="max-w-4xl mx-auto px-6 py-16">
         {/* Back button */}
         <Link
-          href="/blogPage"
+          href="/blog"
           className="text-gray-400 hover:text-white mb-8 inline-block flex items-center text-sm"
         >
           ← Back to Blogs

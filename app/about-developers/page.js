@@ -18,7 +18,7 @@ const AboutDevelopers = () => {
         "TypeScript",
         "PostgreSQL",
       ],
-      linkedin: "https://linkedin.com/in/raj", // Replace with actual LinkedIn
+      linkedin: "https://www.linkedin.com/in/raj-b6187433b/", 
       gradient: "from-blue-500/20 to-cyan-500/20",
       border: "border-blue-500/30",
       accent: "text-blue-400",
@@ -38,7 +38,7 @@ const AboutDevelopers = () => {
         "Adobe XD",
         "Responsive Design",
       ],
-      linkedin: "https://linkedin.com/in/pallavi-jaiswal", // Replace with actual LinkedIn
+      linkedin: "https://www.linkedin.com/in/pallavi-jaiswal-3703752a2/", 
       gradient: "from-purple-500/20 to-pink-500/20",
       border: "border-purple-500/30",
       accent: "text-purple-400",

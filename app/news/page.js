@@ -13,7 +13,8 @@ export default function NewsPage() {
     const fetchNews = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/news?limit=20');
+        const response = await fetch('/api/news?limit=20&fresh=true', { cache: 'no-store' });
+
         
         if (response.ok) {
           const data = await response.json();

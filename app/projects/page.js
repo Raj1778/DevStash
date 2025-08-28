@@ -192,9 +192,7 @@ const ProjectCard = ({ project }) => {
           </button>
         </div>
 
-        <button className="text-sm text-gray-400 hover:text-white transition-colors duration-200">
-          Manage →
-        </button>
+      
       </div>
     </div>
   );

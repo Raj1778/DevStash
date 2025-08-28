@@ -233,18 +233,7 @@ export default function DocumentsPage() {
           </div>
         </div>
 
-        {/* Drop Zone */}
-        <div
-          onDrop={onDrop}
-          onDragOver={onDragOver}
-          onDragLeave={onDragLeave}
-          className={`mb-6 border-2 border-dashed rounded-xl p-6 transition-colors ${dragActive ? 'border-emerald-500 bg-emerald-500/5' : 'border-zinc-800 bg-zinc-900/40'}`}
-        >
-          <div className="text-center text-sm text-zinc-400">
-            Drag and drop files or folders here
-          </div>
-        </div>
-
+       
         <div className="bg-zinc-900/40 border border-zinc-800 rounded-xl overflow-hidden">
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 px-4 py-3 text-xs text-zinc-400 border-b border-zinc-800">
             <div className="col-span-2 sm:col-span-3">Name</div>
