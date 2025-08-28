@@ -7,6 +7,7 @@ import {
   IconArticle,
   IconHome,
   IconEdit,
+  IconUserCircle,
   IconNotebook,
   IconMenu2,
   IconX,
