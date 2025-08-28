@@ -191,8 +191,6 @@ const ProjectCard = ({ project }) => {
             </svg>
           </button>
         </div>
-
-      
       </div>
     </div>
   );
@@ -202,7 +200,6 @@ export default function ProjectsPage() {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
-  const [filter, setFilter] = useState("all");
 
   useEffect(() => {
     defer(async () => {
@@ -265,17 +262,6 @@ export default function ProjectsPage() {
     return `${(sizeInKB / 1024).toFixed(1)} MB`;
   };
 
-  const filteredProjects =
-    filter === "all"
-      ? projects
-      : projects.filter((p) => {
-          const status = (p.status || '').toLowerCase();
-          if (filter === 'active') return status === 'active' || status === 'forked';
-          if (filter === 'completed') return status === 'completed';
-          if (filter === 'paused') return status === 'paused';
-          return true;
-        });
-
   return (
     <div className="min-h-screen bg-black px-6 py-12">
       <div className="max-w-6xl mx-auto">
@@ -290,45 +276,27 @@ export default function ProjectsPage() {
               <p className="text-gray-400">Your development portfolio</p>
             </div>
 
-           <a
-  href={user?.githubUsername 
-    ? `https://github.com/${user.githubUsername}/tab=repositories` 
-    : "https://github.com"}
-  className="px-6 py-3 bg-white text-black rounded-lg font-medium hover:bg-gray-200 transition-colors duration-200 flex items-center"
->
-  <svg
-    className="w-4 h-4 mr-2"
-    fill="none"
-    stroke="currentColor"
-    viewBox="0 0 24 24"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M12 4v16m8-8H4"
-    />
-  </svg>
-  New Project
-</a>
-
-          </div>
-
-          {/* Filter Tabs */}
-          <div className="flex space-x-1 bg-gray-800/30 p-1 rounded-lg inline-flex">
-            {["all", "active", "completed", "paused"].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setFilter(tab)}
-                className={`px-4 py-2 text-sm font-medium rounded-md transition-colors duration-200 capitalize ${
-                  filter === tab
-                    ? "bg-white text-black"
-                    : "text-gray-400 hover:text-white hover:bg-gray-700/50"
-                }`}
+            <a
+              href={user?.githubUsername 
+                ? `https://github.com/${user.githubUsername}?tab=repositories` 
+                : "https://github.com"}
+              className="px-6 py-3 bg-white text-black rounded-lg font-medium hover:bg-gray-200 transition-colors duration-200 flex items-center"
+            >
+              <svg
+                className="w-4 h-4 mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
               >
-                {tab === "all" ? "All Projects" : tab}
-              </button>
-            ))}
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+              New Project
+            </a>
           </div>
         </div>
 
@@ -340,7 +308,7 @@ export default function ProjectsPage() {
             <ProjectCardSkeleton />
             <ProjectCardSkeleton />
           </div>
-        ) : filteredProjects.length === 0 ? (
+        ) : projects.length === 0 ? (
           <div className="text-center py-20">
             <div className="max-w-md mx-auto p-8 border border-gray-700 rounded-xl bg-gray-900/20">
               <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-gray-800 flex items-center justify-center">
@@ -376,7 +344,7 @@ export default function ProjectsPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {filteredProjects.map((project, index) => (
+            {projects.map((project, index) => (
               <ProjectCard key={project.id || index} project={project} />
             ))}
           </div>
