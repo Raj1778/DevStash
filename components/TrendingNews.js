@@ -110,46 +110,50 @@ export default function TrendingNews() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
- useEffect(() => {
-  const fetchDashboardNews = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch("/api/news?limit=3&priority=true");
-      if (response.ok) {
-        const data = await response.json();
-        setNews(data.articles || []);
-      } else {
+  useEffect(() => {
+    // This function fetches the initial 3 articles for display
+    const fetchDashboardNews = async () => {
+      try {
+        setLoading(true);
+        // Request the priority news from the API
+        const response = await fetch("/api/news?limit=3&priority=true");
+        if (response.ok) {
+          const data = await response.json();
+          setNews(data.articles || []);
+        } else {
+          setError("Failed to fetch trending news");
+        }
+      } catch (err) {
+        console.error("⚠️ News fetch error:", err);
         setError("Failed to fetch trending news");
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.error("⚠️ News fetch error:", err);
-      setError("Failed to fetch trending news");
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
 
-  const fetchFullNewsInBackground = async () => {
-    try {
-      console.log("🔄 Starting background fetch for full news...");
-      const response = await fetch("/api/news?limit=10", { cache: "no-store" });
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log(
-          `✅ Background fetch complete: ${data.articles?.length} articles cached`
-        );
-        // keep cached for /news page → no state update here
+    // This function fetches the full news list in the background to pre-populate the cache
+    const fetchFullNewsInBackground = async () => {
+      try {
+        // We defer this call to ensure the main UI rendering isn't blocked
+        await defer(async () => {
+          console.log("🔄 Starting background fetch for full news...");
+          // Request the full list of 10 articles without bypassing the cache
+          const response = await fetch("/api/news?limit=10");
+          if (response.ok) {
+            const data = await response.json();
+            console.log(`✅ Background fetch complete: ${data.articles?.length} articles cached`);
+          }
+        });
+      } catch (error) {
+        console.error("⚠️ Background news fetch failed:", error);
       }
-    } catch (error) {
-      console.error("⚠️ Background news fetch failed:", error);
-    }
-  };
+    };
 
-  // Run both
-  fetchDashboardNews();
-  fetchFullNewsInBackground();
-}, []);
+    // Run both fetch operations
+    fetchDashboardNews();
+    fetchFullNewsInBackground();
+
+  }, []);
 
   return (
     <div className="mt-3 mb-20 space-y-3">
