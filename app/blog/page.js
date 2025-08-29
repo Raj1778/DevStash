@@ -38,9 +38,15 @@ export default function BlogPage() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white">
-      <div className="max-w-6xl mx-auto px-6 py-16">
+       <Link href="/" className="inline-flex items-center space-x-2 m-8 text-emerald-400 hover:text-emerald-300 transition-colors">
+                        <span>←</span>
+                        <span>Back to Dashboard</span>
+                      </Link>
+      <div className="max-w-6xl mx-auto px-6 pt-2 pb-16">
+       
         {/* Header */}
         <div className="mb-12">
+          
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-4xl md:text-5xl font-light text-white mb-3">

@@ -65,7 +65,7 @@ const RecentBlogs = () => {
   }
 
   return (
-    <div className="flex overflow-x-auto gap-4 pb-2 scrollbar-hide md:grid md:grid-cols-2 lg:grid-cols-4">
+    <div className="flex overflow-hidden gap-4 pb-2 scrollbar-hide md:grid md:grid-cols-2 lg:grid-cols-4">
       {blogs.map((blog, index) => (
         <BlogCard key={blog._id || index} blog={blog} />
       ))}

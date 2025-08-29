@@ -111,6 +111,10 @@ export default function CreateBlogPage() {
       )}
 
       <div className="max-w-4xl mx-auto px-6">
+        <Link href="/" className="inline-flex items-center space-x-2 text-emerald-400 hover:text-emerald-300 transition-colors">
+              <span>←</span>
+              <span>Back to Dashboard</span>
+            </Link>
         {/* Header */}
         <div className="mb-12 text-center">
           <h1 className="text-4xl md:text-5xl font-light text-white mb-4">

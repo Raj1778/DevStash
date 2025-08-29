@@ -66,7 +66,7 @@ export default function RootLayout({ children }) {
         <link rel="dns-prefetch" href="https://leetcode.com" />
         
         {/* Prefetch critical pages */}
-        <link rel="prefetch" href="/blogPage" />
+        <link rel="prefetch" href="/blog" />
         <link rel="prefetch" href="/projects" />
         <link rel="prefetch" href="/Notes" />
         <link rel="prefetch" href="/createBlog" />

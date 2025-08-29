@@ -1,9 +1,9 @@
-// app/blogs/[slug]/page.js
 import connectDB from "@/lib/db/mongodb";
 import Blog from "@/lib/models/Blog";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import Image from "next/image";
+import ReactMarkdown from "react-markdown";
 
 export async function generateMetadata({ params }) {
   const { slug } = await params;
@@ -30,9 +30,6 @@ export default async function BlogPage({ params }) {
   if (!blog) {
     notFound();
   }
-
-  // Convert content string to array of paragraphs
-  const contentParagraphs = blog.content.split("\n").filter((p) => p.trim());
 
   return (
     <div className="min-h-screen bg-black">
@@ -70,11 +67,9 @@ export default async function BlogPage({ params }) {
               <span>{new Date(blog.createdAt).toLocaleDateString()}</span>
             </div>
 
-            {/* Blog content */}
-            <div className="space-y-4 text-gray-300 leading-relaxed">
-              {contentParagraphs.map((paragraph, index) => (
-                <p key={index}>{paragraph}</p>
-              ))}
+            {/* Blog content - Add text-white here */}
+            <div className="prose prose-sm md:prose-base dark:prose-invert max-w-none text-white"> {/* ADDED text-white */}
+              <ReactMarkdown>{blog.content}</ReactMarkdown>
             </div>
 
             {/* Tags */}
@@ -96,6 +91,7 @@ export default async function BlogPage({ params }) {
     </div>
   );
 }
+
 
 export async function generateStaticParams() {
   await connectDB();

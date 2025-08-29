@@ -1,3 +1,4 @@
+// app/news/page.js
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
@@ -13,8 +14,8 @@ export default function NewsPage() {
     const fetchNews = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/news?limit=20&fresh=true', { cache: 'no-store' });
-
+        // Corrected fetch call: removed '?fresh=true' and the cache option
+        const response = await fetch('/api/news?limit=20');
         
         if (response.ok) {
           const data = await response.json();
@@ -40,7 +41,6 @@ export default function NewsPage() {
 
     fetchNews();
   }, []);
-
   const formatDate = (dateString) => {
     if (!dateString) return 'Date not available';
     
@@ -133,6 +133,10 @@ export default function NewsPage() {
   return (
     <div className="min-h-screen bg-black text-white pb-20">
       <div className="max-w-4xl mx-auto px-6 py-16">
+        <Link href="/" className="inline-flex items-center space-x-2 text-emerald-400 hover:text-emerald-300 transition-colors">
+              <span>←</span>
+              <span>Back to Dashboard</span>
+            </Link>
         {/* Header */}
         <header className="mb-12 text-center">
           <h1 className="text-4xl md:text-5xl font-light text-white mb-4">

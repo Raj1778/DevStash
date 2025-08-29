@@ -2,6 +2,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function MyAccountPage() {
   const [user, setUser] = useState(null);
@@ -108,6 +109,10 @@ export default function MyAccountPage() {
   return (
     <div className="min-h-screen bg-black px-6 py-12">
       <div className="max-w-2xl mx-auto">
+        <Link href="/" className="inline-flex items-center space-x-2 text-emerald-400 hover:text-emerald-300 transition-colors">
+                      <span>←</span>
+                      <span>Back to Dashboard</span>
+                    </Link>
         {/* Header */}
         <div className="mb-12">
           <h1 className="text-4xl font-light text-white mb-2 tracking-tight">
@@ -286,7 +291,7 @@ export default function MyAccountPage() {
 
           {/* Actions */}
           <div className="flex items-center justify-between pt-6">
-            
+            <Link href = "/">
             <button
               onClick={handleSave}
               disabled={saving}
@@ -294,6 +299,7 @@ export default function MyAccountPage() {
             >
               {saving ? "Saving..." : "Save changes"}
             </button>
+            </Link>
           </div>
             </div>
           </>

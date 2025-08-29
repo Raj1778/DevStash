@@ -48,7 +48,7 @@ export default function MobileSidebar() {
     {
       title: "Blogs",
       icon: <IconArticle className="w-5 h-5" />,
-      href: "/blogPage",
+      href: "/blog",
     },
     {
       title: "Create Blog",

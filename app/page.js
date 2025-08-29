@@ -227,7 +227,7 @@ export default function Home() {
             </h2>
             <div className="flex items-center space-x-3">
               <Link 
-                href="/blogPage"
+                href="/blog"
                 prefetch={false}
                 className="text-zinc-400 hover:text-white text-sm md:text-sm transition-colors px-3 py-2 md:px-0 md:py-0 rounded-lg md:rounded-none hover:bg-zinc-808/50 md:hover:bg-transparent"
               >

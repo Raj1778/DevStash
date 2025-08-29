@@ -50,7 +50,15 @@ function buildFallback() {
 // Alternative API 1: Guardian API (Free, 12,000 requests/day)
 async function fetchFromGuardian(limit = 10) {
   const apiKey = process.env.GUARDIAN_API_KEY;
-  if (!apiKey) return null;
+  if (!apiKey) {
+    console.error('GUARDIAN_API_KEY is not set');
+    return null;
+  }
+
+  // Calculate the date from one week ago in YYYY-MM-DD format
+  const oneWeekAgo = new Date();
+  oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+  const oneWeekAgoIso = oneWeekAgo.toISOString().split('T')[0];
 
   try {
     // Multiple search queries for diverse content
@@ -77,9 +85,9 @@ async function fetchFromGuardian(limit = 10) {
       
       try {
         const response = await fetch(
-  `https://content.guardianapis.com/search?q=${encodeURIComponent(query)}&section=technology|business|science&page-size=${articlesPerQuery + 2}&show-fields=thumbnail,trailText&order-by=newest&api-key=${apiKey}`,
-  { next: { revalidate: 3600 } }
-);
+          `https://content.guardianapis.com/search?q=${encodeURIComponent(query)}&section=technology|business|science&from-date=${oneWeekAgoIso}&page-size=${articlesPerQuery + 2}&show-fields=thumbnail,trailText&order-by=newest&api-key=${apiKey}`,
+          { next: { revalidate: 3600 } }
+        );
 
         
         if (response.ok) {
@@ -106,6 +114,8 @@ async function fetchFromGuardian(limit = 10) {
               }
             }
           }
+        } else {
+          console.error(`Guardian API response failed with status: ${response.status} for query: ${query}`);
         }
         
         // Small delay between requests to be respectful
@@ -121,9 +131,9 @@ async function fetchFromGuardian(limit = 10) {
       try {
         const needed = limit - allArticles.length;
        const response = await fetch(
-  `https://content.guardianapis.com/search?section=technology&page-size=${needed + 3}&show-fields=thumbnail,trailText&order-by=newest&api-key=${apiKey}`,
-  { next: { revalidate: 3600 } }
-);
+          `https://content.guardianapis.com/search?section=technology&from-date=${oneWeekAgoIso}&page-size=${needed + 3}&show-fields=thumbnail,trailText&order-by=newest&api-key=${apiKey}`,
+          { next: { revalidate: 3600 } }
+        );
 
         
         if (response.ok) {
@@ -160,6 +170,7 @@ async function fetchFromGuardian(limit = 10) {
     return null;
   }
 }
+
 
 // Alternative API 2: RSS Feeds (Always free)
 async function fetchFromRSS() {
