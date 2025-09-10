@@ -126,7 +126,7 @@ export default function Home() {
       <div className="fixed top-0 left-1/2 -translate-x-1/2 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
 
       {/* Main Content */}
-      <div className="flex-1 px-4 md:px-6 py-6 md:py-8 max-w-6xl mx-auto w-full relative z-10">
+      <div className="flex-1 px-4 md:px-6 py-6 md:py-8 max-w-6xl 2xl:max-w-7xl mx-auto w-full relative z-10">
         {/* Welcome Section - Mobile optimized */}
         <div className="mb-8 md:mb-8">
           <h1 className="text-3xl md:text-4xl font-light text-white mb-3 md:mb-2 leading-tight">
