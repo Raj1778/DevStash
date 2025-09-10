@@ -7,6 +7,9 @@ import { jwtVerify } from "jose";
 
 const secret = new TextEncoder().encode(process.env.JWT_SECRET || "dev-secret");
 
+// Cache blog data for 2 minutes
+export const revalidate = 120;
+
 function generateSlug(title) {
   return title
     .toLowerCase()

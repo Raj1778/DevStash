@@ -1,7 +1,8 @@
 // app/api/news/route.js - Multiple API Sources
 import { NextResponse } from 'next/server';
 
-export const dynamic = 'force-dynamic';
+// Cache news data for 1 hour
+export const revalidate = 3600;
 
 const newsCache = {
   data: null,

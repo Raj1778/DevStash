@@ -4,6 +4,9 @@ import { NextResponse } from 'next/server';
 const githubCache = new Map();
 const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes (increased from 5 minutes)
 
+// Cache GitHub data for 10 minutes
+export const revalidate = 600;
+
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);

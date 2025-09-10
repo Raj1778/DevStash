@@ -4,6 +4,9 @@ import { NextResponse } from 'next/server';
 const leetcodeCache = new Map();
 const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes (LeetCode data changes less frequently)
 
+// Cache LeetCode data for 10 minutes
+export const revalidate = 600;
+
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);

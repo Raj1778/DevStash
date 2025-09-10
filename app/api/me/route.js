@@ -7,6 +7,9 @@ import { NextResponse } from "next/server";
 
 const secret = new TextEncoder().encode(process.env.JWT_SECRET || "dev-secret");
 
+// Cache user data for 5 minutes
+export const revalidate = 300;
+
 export async function GET() {
   try {
     await connectDB();
