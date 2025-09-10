@@ -303,9 +303,10 @@ async function fetchFromHackerNews(limit = 3) {
 }
 
 export async function GET(request) {
+  let limit = 10; // Default fallback
   try {
     const url = new URL(request.url);
-    const limit = parseInt(url.searchParams.get('limit')) || 10; // Default to 10, allow override
+    limit = parseInt(url.searchParams.get('limit')) || 10; // Default to 10, allow override
     const priority = url.searchParams.get('priority') === 'true'; // For dashboard priority loading
     
    // Allow bypassing the cache with ?fresh=true
