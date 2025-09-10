@@ -44,18 +44,7 @@ export default function Sidebar({ user }) {
             My Account
           </Link>
         </li>
-        <li>
-          <a
-            href={user?.linkedinUsername 
-              ? `https://www.linkedin.com/in/${user.linkedinUsername}` 
-              : "https://www.linkedin.com/in/your-profile"}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block py-2 px-4 rounded hover:bg-white/10 transition"
-          >
-            LinkedIn
-          </a>
-        </li>
+        
 
         {/* ✅ Proper Logout Button */}
         <li>
