@@ -34,14 +34,22 @@ export default function DocumentsPage() {
 
   const fetchFiles = async () => {
     try {
+      console.log('Fetching documents...');
       const res = await fetch("/api/documents");
       if (res.ok) {
         const data = await res.json();
+        console.log('Documents fetched:', data);
         setFiles(data.files || []);
-      } else if (res.status !== 401) {
-        showError("Failed to load documents");
+      } else if (res.status === 401) {
+        console.log('User not authenticated');
+        setFiles([]);
+      } else {
+        const errorData = await res.json().catch(() => ({}));
+        console.error('Failed to load documents:', res.status, errorData);
+        showError(`Failed to load documents: ${errorData.error || 'Unknown error'}`);
       }
     } catch (e) {
+      console.error('Failed to load documents:', e);
       showError("Failed to load documents");
     }
   };
@@ -53,7 +61,12 @@ export default function DocumentsPage() {
       method: "POST",
       body: formData,
     });
-    if (!res.ok) throw new Error("upload failed");
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      console.error('Upload failed:', res.status, errorData);
+      throw new Error(`Upload failed: ${res.status} ${errorData.error || 'Unknown error'}`);
+    }
+    return res.json();
   };
 
   const handleFiles = useCallback(async (fileList) => {
@@ -61,21 +74,38 @@ export default function DocumentsPage() {
     setUploading(true);
     setUploadCount(fileList.length);
     let success = 0;
+    let errors = [];
     try {
       // Convert FileList to array
       const filesArray = Array.from(fileList);
+      console.log(`Uploading ${filesArray.length} files...`);
+      
       for (const f of filesArray) {
         try {
+          console.log(`Uploading file: ${f.name}`);
           await uploadOne(f);
           success += 1;
-        } catch {}
+        } catch (error) {
+          console.error(`Failed to upload ${f.name}:`, error.message);
+          errors.push(`${f.name}: ${error.message}`);
+        }
       }
+      
       if (success > 0) {
-        showSuccess(`${success} file${success>1?'s':''} uploaded`);
+        showSuccess(`${success} file${success>1?'s':''} uploaded successfully`);
         await fetchFiles();
-      } else {
+      }
+      
+      if (errors.length > 0) {
+        showError(`Failed to upload ${errors.length} file(s): ${errors.slice(0, 2).join(', ')}${errors.length > 2 ? '...' : ''}`);
+      }
+      
+      if (success === 0 && errors.length === 0) {
         showError("No files uploaded");
       }
+    } catch (error) {
+      console.error('Upload process failed:', error);
+      showError("Upload process failed");
     } finally {
       setUploading(false);
       setUploadCount(0);
@@ -233,7 +263,8 @@ export default function DocumentsPage() {
           </div>
         </div>
 
-       
+        
+
         <div className="bg-zinc-900/40 border border-zinc-800 rounded-xl overflow-hidden">
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 px-4 py-3 text-xs text-zinc-400 border-b border-zinc-800">
             <div className="col-span-2 sm:col-span-3">Name</div>
