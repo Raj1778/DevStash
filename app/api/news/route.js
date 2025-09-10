@@ -174,7 +174,7 @@ async function fetchFromGuardian(limit = 10) {
 
 
 // Alternative API 2: RSS Feeds (Always free)
-async function fetchFromRSS() {
+async function fetchFromRSS(limit = 3) {
   try {
     const feeds = [
       { url: 'https://feeds.feedburner.com/oreilly/radar', tag: 'Tech' },
@@ -187,7 +187,7 @@ async function fetchFromRSS() {
     const seenUrls = new Set();
 
     for (const { url: feedUrl, tag } of feeds) {
-      if (articles.length >= 3) break;
+      if (articles.length >= limit) break;
       
       try {
         const response = await fetch(
@@ -199,7 +199,7 @@ async function fetchFromRSS() {
           const data = await response.json();
           if (data.items) {
             for (const item of data.items) {
-              if (!seenUrls.has(item.link) && articles.length < 3) {
+              if (!seenUrls.has(item.link) && articles.length < limit) {
                 seenUrls.add(item.link);
                 articles.push({
                   title: item.title,
@@ -235,7 +235,7 @@ async function fetchFromRSS() {
 }
 
 // Alternative API 3: HackerNews API (Free, unlimited)
-async function fetchFromHackerNews() {
+async function fetchFromHackerNews(limit = 3) {
   try {
     // Get top stories
     const topStoriesResponse = await fetch('https://hacker-news.firebaseio.com/v0/topstories.json');
@@ -257,7 +257,7 @@ async function fetchFromHackerNews() {
     const seenUrls = new Set();
     
     // Get first 30 stories and categorize them
-    for (let i = 0; i < Math.min(30, topStories.length) && articles.length < 3; i++) {
+    for (let i = 0; i < Math.min(30, topStories.length) && articles.length < limit; i++) {
       try {
         const storyResponse = await fetch(`https://hacker-news.firebaseio.com/v0/item/${topStories[i]}.json`);
         if (!storyResponse.ok) continue;
