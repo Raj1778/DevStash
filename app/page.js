@@ -123,7 +123,7 @@ export default function Home() {
     <div className="bg-[#0a0a0a] min-h-screen min-w-[320px] flex flex-col relative">
       {/* Ambient Background Effects */}
       <div className="fixed inset-0 bg-gradient-to-br from-zinc-909/20 via-transparent to-zinc-808/20 pointer-events-none" />
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
+      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-96 h-96 bg-emerald-500/5 md:hidden rounded-full blur-3xl pointer-events-none" />
 
       {/* Main Content */}
       <div className="flex-1 px-4 md:px-6 py-6 md:py-8 max-w-6xl 2xl:max-w-7xl mx-auto w-full relative z-10">
