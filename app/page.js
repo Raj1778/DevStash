@@ -87,12 +87,28 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Try to load cached user data first for instant display
+    const cachedUser = localStorage.getItem('devstash_user');
+    if (cachedUser) {
+      try {
+        const userData = JSON.parse(cachedUser);
+        setUser(userData);
+        setLoading(false);
+      } catch (e) {
+        // Invalid cache, continue with fetch
+      }
+    }
+
     defer(async () => {
       try {
-        const response = await fetch("/api/me", { cache: 'no-store' });
+        const response = await fetch("/api/me");
         if (response.ok) {
           const data = await response.json();
           setUser(data.user);
+          // Cache the user data for instant loading next time
+          if (data.user) {
+            localStorage.setItem('devstash_user', JSON.stringify(data.user));
+          }
         }
       } catch (error) {
         // ignore

@@ -34,6 +34,18 @@ export function ClientStats() {
       try {
         setLoading(true);
         
+        // Try to load cached user data first
+        const cachedUser = localStorage.getItem('devstash_user');
+        if (cachedUser) {
+          try {
+            const userData = JSON.parse(cachedUser);
+            setUser(userData);
+            await fetchStats(userData);
+          } catch (e) {
+            // Invalid cache, continue with fetch
+          }
+        }
+        
         // Fetch user data
         const userRes = await fetch("/api/me");
         if (userRes.ok) {
