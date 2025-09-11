@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 import MobileSidebar from "@/components/MobileSidebar";
 import { PerformanceMonitor } from "@/components/PerformanceMonitor";
 import { Toaster } from "react-hot-toast";
+import { Analytics } from "@vercel/analytics/next"
 
 const geist = Geist({
   subsets: ["latin"],
@@ -104,6 +105,7 @@ export default function RootLayout({ children }) {
             },
           }}
         />
+        <Analytics />
       </body>
     </html>
   );
